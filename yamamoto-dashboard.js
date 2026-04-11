@@ -124,14 +124,21 @@
         if (!/まで$/.test(label)) return;
         var base = label.replace(/まで$/, '');
         var dateDd = map[base] || map[base + '日'] || map[base + '満期'] || map[base.replace(/満了$/, '満了日')];
-        if (!dateDd) return;
-        var dateText = readOriginalDate(dateDd);
+        var dateText = dateDd ? readOriginalDate(dateDd) : '';
         var d = diffDays(dateText);
         var target = map[label];
-        if (target && d != null) {
+        if (target) {
           target.setAttribute(PATCHED_ATTR, '1');
-          target.textContent = labelFor(d);
-          styleFor(target, d);
+          if (d == null) {
+            // 日付空 → 残日数は「—」
+            target.textContent = '—';
+            target.style.color = '#b0bec5';
+            target.style.background = '';
+            target.style.fontWeight = 'normal';
+          } else {
+            target.textContent = labelFor(d);
+            styleFor(target, d);
+          }
         }
         if (d == null) return;
         if (/車検/.test(base) && d <= SHAKEN) rowShaken = true;
@@ -192,8 +199,15 @@
         var dateText = readOriginalDate(dateCell);
         var d = diffDays(dateText);
         target.setAttribute(PATCHED_ATTR, '1');
-        target.textContent = labelFor(d);
-        styleFor(target, d);
+        if (d == null) {
+          target.textContent = '—';
+          target.style.color = '#b0bec5';
+          target.style.background = '';
+          target.style.fontWeight = 'normal';
+        } else {
+          target.textContent = labelFor(d);
+          styleFor(target, d);
+        }
       });
     });
 
