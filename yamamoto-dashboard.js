@@ -312,45 +312,6 @@
     });
   }
 
-  // ヘッダータイトルバーを JS で注入（kViewerのタイトル要素クラスが不安定なためCSS依存しない）
-  function patchTitleBar() {
-    if (document.getElementById('yk-title-bar')) return;
-    // ページ内で「ダッシュボード」または「kViewer」以外で最初に出てくる大見出しを探す
-    var candidates = Array.from(document.querySelectorAll('h1, h2, [class*="title" i], [class*="Title"]'));
-    var titleEl = null;
-    var titleText = '';
-    for (var i = 0; i < candidates.length; i++) {
-      var el = candidates[i];
-      var t = (el.textContent || '').trim();
-      // kViewer のグローバルロゴ「kViewer」は除外
-      if (!t || t === 'kViewer' || t.length > 100) continue;
-      // ダッシュボードや顧客名らしき文字列
-      if (/ダッシュボード|様|株式会社|管理|一覧/.test(t)) {
-        titleEl = el;
-        titleText = t;
-        break;
-      }
-    }
-    if (!titleEl) {
-      // フォールバック: 最初の h1
-      var h1 = document.querySelector('h1');
-      if (h1) {
-        titleEl = h1;
-        titleText = (h1.textContent || '').trim();
-      }
-    }
-    if (!titleText) return;
-
-    // 既存タイトル要素を非表示にして、自前のバーを最上部に挿入
-    if (titleEl) titleEl.style.display = 'none';
-    var bar = document.createElement('div');
-    bar.id = 'yk-title-bar';
-    bar.setAttribute(PATCHED_ATTR, '1');
-    bar.textContent = titleText;
-    var container = document.querySelector('main') || document.body;
-    container.insertBefore(bar, container.firstChild);
-  }
-
   // 詳細ビュー: セクションヘッダー (h3) を起点にタブUIへ再構成
   function patchDetailTabs() {
     var fields = Array.from(document.querySelectorAll('.kv-detail-field'));
@@ -633,9 +594,20 @@
         b.classList.toggle('yk-tab-active', b === btn);
       });
     }
+    var firstField = null;
     document.querySelectorAll('.kv-detail-field[data-yk-section]').forEach(function (f) {
-      f.style.display = f.getAttribute('data-yk-section') === String(idx) ? '' : 'none';
+      var visible = f.getAttribute('data-yk-section') === String(idx);
+      f.style.display = visible ? '' : 'none';
+      if (visible && !firstField) firstField = f;
     });
+    // 最初のフィールドにスクロール（タブバー高さ分オフセット）
+    if (firstField) {
+      setTimeout(function () {
+        var rect = firstField.getBoundingClientRect();
+        var scrollTop = window.pageYOffset + rect.top - 160;
+        window.scrollTo({ top: scrollTop, behavior: 'smooth' });
+      }, 50);
+    }
   };
 
   var globalDelegationInstalled = false;
@@ -678,7 +650,6 @@
     running = true;
     try {
       installGlobalDelegation();
-      patchTitleBar();
       var stats = patchListView();
       renderSummaryCards(stats);
       patchDetailTabs();
