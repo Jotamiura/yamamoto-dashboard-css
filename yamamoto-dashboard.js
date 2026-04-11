@@ -61,14 +61,24 @@
     return null;
   }
 
-  // 一覧ビュー: thead から「○○まで」列を見つけて、対応する日付列から再計算
-  // 同時に集計値（管理車両数 / 車検アラート / 保険アラート）も計算する
+  var STORAGE_KEY = 'yk-exclude-empty-yamamoto';
+  function isExcludeEmpty() {
+    var v = localStorage.getItem(STORAGE_KEY);
+    return v === null ? true : v === '1';
+  }
+  function setExcludeEmpty(on) {
+    localStorage.setItem(STORAGE_KEY, on ? '1' : '0');
+  }
+
+  // 一覧ビュー: 日付列から残日数を再計算（Pass1）し、フィルタ＋集計も行う（Pass2）
   function patchListView() {
     var table = document.querySelector('table');
     if (!table) return null;
     var ths = Array.from(table.querySelectorAll('thead th'));
     if (!ths.length) return null;
     var headers = ths.map(function (th) { return th.textContent.trim(); });
+
+    // 列インデックス
     var pairs = []; // [{dateIdx, daysIdx, label}]
     headers.forEach(function (h, i) {
       if (!/まで$/.test(h)) return;
@@ -79,14 +89,11 @@
       if (dateIdx < 0) dateIdx = i - 1;
       pairs.push({ dateIdx: dateIdx, daysIdx: i, label: base });
     });
+    var regIdx = headers.findIndex(function (h) { return /登録番号/.test(h); });
 
-    var stats = { total: 0, shaken: 0, hoken: 0 };
-    var SHAKEN_THRESHOLD = 60;
-    var HOKEN_THRESHOLD = 45;
-
-    var rows = table.querySelectorAll('tbody tr');
+    // Pass 1: 全行に対して残日数の再計算（フィルタ前）
+    var rows = Array.from(table.querySelectorAll('tbody tr'));
     rows.forEach(function (row) {
-      stats.total++;
       var cells = row.querySelectorAll('td');
       pairs.forEach(function (p) {
         var target = cells[p.daysIdx];
@@ -97,53 +104,95 @@
         target.setAttribute(PATCHED_ATTR, '1');
         target.textContent = labelFor(d);
         styleFor(target, d);
-        // アラート集計
-        if (d != null) {
-          if (/車検/.test(p.label) && d <= SHAKEN_THRESHOLD) stats.shaken++;
-          if (/保険|満期/.test(p.label) && d <= HOKEN_THRESHOLD) stats.hoken++;
-        }
+      });
+    });
+
+    // Pass 2: フィルタ適用 + 集計（表示行のみ対象）
+    var stats = { total: 0, shaken: 0, hoken: 0 };
+    var SHAKEN_THRESHOLD = 60;
+    var HOKEN_THRESHOLD = 45;
+    var exclude = isExcludeEmpty();
+
+    rows.forEach(function (row) {
+      var cells = row.querySelectorAll('td');
+      // 重機判定：登録番号が空
+      var regText = (regIdx >= 0 && cells[regIdx]) ? cells[regIdx].textContent.trim() : '';
+      var isHeavyEquipment = regText === '';
+
+      if (exclude && isHeavyEquipment) {
+        row.style.display = 'none';
+        return;
+      }
+      row.style.display = '';
+      stats.total++;
+      pairs.forEach(function (p) {
+        var dateCell = cells[p.dateIdx];
+        if (!dateCell) return;
+        var d = diffDays(dateCell.textContent.trim());
+        if (d == null) return;
+        if (/車検/.test(p.label) && d <= SHAKEN_THRESHOLD) stats.shaken++;
+        if (/保険|満期/.test(p.label) && d <= HOKEN_THRESHOLD) stats.hoken++;
       });
     });
 
     return stats;
   }
 
-  // 集計カードをタイトル直下に注入
+  // 集計カードをテーブル直前に注入
   function renderSummaryCards(stats) {
     if (!stats) return;
-    var existing = document.getElementById('yk-summary-cards');
+    var existing = document.getElementById('yk-summary-wrap');
     if (existing) existing.remove();
 
-    var card = document.createElement('div');
-    card.id = 'yk-summary-cards';
-    card.setAttribute(PATCHED_ATTR, '1');
-    card.innerHTML =
-      '<div class="yk-card yk-card-total">' +
-        '<div class="yk-card-icon">🚗</div>' +
-        '<div class="yk-card-body">' +
-          '<div class="yk-card-label">管理車両数</div>' +
-          '<div class="yk-card-value">' + stats.total + ' <span class="yk-card-unit">台</span></div>' +
+    var checked = isExcludeEmpty() ? 'checked' : '';
+    var wrap = document.createElement('div');
+    wrap.id = 'yk-summary-wrap';
+    wrap.setAttribute(PATCHED_ATTR, '1');
+    wrap.innerHTML =
+      '<div id="yk-summary-cards">' +
+        '<div class="yk-card yk-card-total">' +
+          '<div class="yk-card-icon">🚗</div>' +
+          '<div class="yk-card-body">' +
+            '<div class="yk-card-label">管理車両数</div>' +
+            '<div class="yk-card-value">' + stats.total + ' <span class="yk-card-unit">台</span></div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="yk-card yk-card-shaken">' +
+          '<div class="yk-card-icon">⚠️</div>' +
+          '<div class="yk-card-body">' +
+            '<div class="yk-card-label">車検アラート（60日以内）</div>' +
+            '<div class="yk-card-value">' + stats.shaken + ' <span class="yk-card-unit">件</span></div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="yk-card yk-card-hoken">' +
+          '<div class="yk-card-icon">📅</div>' +
+          '<div class="yk-card-body">' +
+            '<div class="yk-card-label">保険アラート（45日以内）</div>' +
+            '<div class="yk-card-value">' + stats.hoken + ' <span class="yk-card-unit">件</span></div>' +
+          '</div>' +
         '</div>' +
       '</div>' +
-      '<div class="yk-card yk-card-shaken">' +
-        '<div class="yk-card-icon">⚠️</div>' +
-        '<div class="yk-card-body">' +
-          '<div class="yk-card-label">車検アラート（60日以内）</div>' +
-          '<div class="yk-card-value">' + stats.shaken + ' <span class="yk-card-unit">件</span></div>' +
-        '</div>' +
-      '</div>' +
-      '<div class="yk-card yk-card-hoken">' +
-        '<div class="yk-card-icon">📅</div>' +
-        '<div class="yk-card-body">' +
-          '<div class="yk-card-label">保険アラート（45日以内）</div>' +
-          '<div class="yk-card-value">' + stats.hoken + ' <span class="yk-card-unit">件</span></div>' +
-        '</div>' +
+      '<div id="yk-filter-bar">' +
+        '<label class="yk-filter-toggle">' +
+          '<input type="checkbox" id="yk-exclude-empty" ' + checked + '> ' +
+          '<span>重機（登録番号なし）を除外する</span>' +
+        '</label>' +
       '</div>';
 
-    // タイトル直下 or テーブル直前に挿入
     var table = document.querySelector('table');
     if (table && table.parentElement) {
-      table.parentElement.insertBefore(card, table);
+      table.parentElement.insertBefore(wrap, table);
+    }
+
+    // チェックボックスのイベント
+    var cb = document.getElementById('yk-exclude-empty');
+    if (cb) {
+      cb.addEventListener('change', function () {
+        setExcludeEmpty(cb.checked);
+        // 再実行
+        var newStats = patchListView();
+        renderSummaryCards(newStats);
+      });
     }
   }
 

@@ -160,3 +160,40 @@ footer {
   color: #78909c;
   margin-left: 4px;
 }
+
+/* ========== フィルタバー ========== */
+#yk-filter-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 0 12px;
+  font-family: -apple-system, "Segoe UI", "Hiragino Sans", Meiryo, sans-serif;
+}
+
+.yk-filter-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #fff;
+  border: 1px solid #cfd8dc;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #455a64;
+  font-weight: bold;
+  user-select: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.yk-filter-toggle:hover {
+  background: #eceff1;
+  border-color: #90a4ae;
+}
+
+.yk-filter-toggle input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #1976d2;
+  margin: 0;
+}
