@@ -66,7 +66,7 @@ a[href*="detail"]:hover {
   background: #1565c0 !important;
 }
 
-/* タイトル装飾 */
+/* タイトル装飾 (中央揃え + sticky) */
 .kv-app-title, [class*="app-title"] {
   background: linear-gradient(90deg, #1976d2, #42a5f5) !important;
   color: #fff !important;
@@ -75,6 +75,16 @@ a[href*="detail"]:hover {
   margin-bottom: 16px !important;
   font-size: 22px !important;
   box-shadow: 0 2px 6px rgba(25,118,210,0.2) !important;
+  text-align: center !important;
+}
+
+/* kViewer ページヘッダー全体を sticky 化 */
+header, [class*="kv-header"], [class*="page-header"] {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 100 !important;
+  background: #fff !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
 }
 
 /* 詳細画面の見出し */
@@ -466,4 +476,58 @@ footer {
   border: none !important;
   border-top: 1px dashed #cfd8dc !important;
   margin: 18px 0 !important;
+}
+
+/* ========== 詳細画面タブUI ========== */
+#yk-detail-tabs {
+  margin: 16px 0 8px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: #fff;
+  font-family: -apple-system, "Segoe UI", "Hiragino Sans", Meiryo, sans-serif;
+}
+
+.yk-tab-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  border-bottom: 2px solid #e0e0e0;
+  padding: 0 4px;
+}
+
+.yk-tab-btn {
+  padding: 10px 18px;
+  background: #fafafa;
+  border: 1px solid #e0e0e0;
+  border-bottom: 3px solid transparent;
+  border-radius: 6px 6px 0 0;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  color: #607d8b;
+  transition: all 0.15s;
+  margin-bottom: -2px;
+  position: relative;
+  top: 2px;
+}
+
+.yk-tab-btn:hover {
+  background: #eceff1;
+  color: #263238;
+}
+
+.yk-tab-btn.yk-tab-active {
+  background: #fff;
+  color: #1976d2;
+  border-bottom-width: 3px !important;
+}
+
+/* タブ内のセクション h3 は重複表示なので非表示 */
+.kv-detail-field[data-yk-section] h3 {
+  display: none !important;
+}
+
+.kv-detail-field[data-yk-section] {
+  /* セクション開始フィールドの上側余白を詰める */
 }

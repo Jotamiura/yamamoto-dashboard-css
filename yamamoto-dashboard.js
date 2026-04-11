@@ -323,6 +323,72 @@
     });
   }
 
+  // 詳細ビュー: セクションヘッダー (h3) を起点にタブUIへ再構成
+  function patchDetailTabs() {
+    // 既にタブ化済みなら何もしない
+    if (document.getElementById('yk-detail-tabs')) return;
+
+    var fields = Array.from(document.querySelectorAll('.kv-detail-field'));
+    if (!fields.length) return;
+
+    // セクション分割: h3 があるフィールドを境界とする
+    var sections = []; // [{title, color, fields:[]}]
+    var current = null;
+    fields.forEach(function (f) {
+      var h3 = f.querySelector('h3');
+      if (h3) {
+        var title = (h3.textContent || '').trim();
+        // border-left の色を推定
+        var color = '#1976d2';
+        var style = h3.getAttribute('style') || '';
+        var m = style.match(/border-left:\s*\d+px\s+solid\s+([^;]+)/);
+        if (m) color = m[1].trim();
+        current = { title: title, color: color, fields: [f] };
+        sections.push(current);
+      } else if (current) {
+        current.fields.push(f);
+      }
+    });
+
+    if (sections.length < 2) return;
+
+    // タブバー生成
+    var parent = fields[0].parentElement;
+    if (!parent) return;
+    var tabs = document.createElement('div');
+    tabs.id = 'yk-detail-tabs';
+    tabs.setAttribute(PATCHED_ATTR, '1');
+    var tabHtml = '<div class="yk-tab-bar">';
+    sections.forEach(function (s, i) {
+      tabHtml += '<button type="button" class="yk-tab-btn' + (i === 0 ? ' yk-tab-active' : '') + '" data-yk-tab="' + i + '" style="border-bottom-color:' + s.color + '">' + s.title + '</button>';
+    });
+    tabHtml += '</div>';
+    tabs.innerHTML = tabHtml;
+    parent.insertBefore(tabs, fields[0]);
+
+    // 各セクションに data 属性を付与し、初期は1つ目のみ表示
+    sections.forEach(function (s, i) {
+      s.fields.forEach(function (f) {
+        f.setAttribute('data-yk-section', String(i));
+        if (i !== 0) f.style.display = 'none';
+      });
+    });
+
+    // タブクリック
+    tabs.querySelectorAll('.yk-tab-btn').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        var idx = btn.getAttribute('data-yk-tab');
+        tabs.querySelectorAll('.yk-tab-btn').forEach(function (b) {
+          b.classList.toggle('yk-tab-active', b === btn);
+        });
+        document.querySelectorAll('.kv-detail-field[data-yk-section]').forEach(function (f) {
+          f.style.display = f.getAttribute('data-yk-section') === idx ? '' : 'none';
+        });
+      });
+    });
+  }
+
   // 詳細ビュー: kv-detail-field-label が「残日数」のフィールドを探し、
   // 同じ grid-cols-12 セクションにある日付フィールドから再計算
   function patchDetailView() {
@@ -539,6 +605,7 @@
     try {
       var stats = patchListView();
       renderSummaryCards(stats);
+      patchDetailTabs();
       patchDetailView();
       patchFormatting();
     } catch (e) {
