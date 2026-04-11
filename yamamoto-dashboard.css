@@ -96,6 +96,11 @@ thead th {
   text-align: center !important;
 }
 
+/* th 内の flex コンテナも中央寄せ (kViewerは <div class="flex items-center"> でラベルを包む) */
+thead th > div {
+  justify-content: center !important;
+}
+
 /* 詳細画面の見出し */
 h3 {
   margin: 16px 0 8px 0 !important;
