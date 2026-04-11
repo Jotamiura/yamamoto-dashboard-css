@@ -80,6 +80,16 @@
     localStorage.setItem(STORAGE_KEY, on ? '1' : '0');
   }
 
+  // アラートフィルタ: '' / 'shaken' / 'hoken'
+  var ALERT_FILTER_KEY = 'yk-alert-filter-yamamoto';
+  function getAlertFilter() {
+    return localStorage.getItem(ALERT_FILTER_KEY) || '';
+  }
+  function setAlertFilter(v) {
+    if (v) localStorage.setItem(ALERT_FILTER_KEY, v);
+    else localStorage.removeItem(ALERT_FILTER_KEY);
+  }
+
   // 一覧ビュー: 日付列から残日数を再計算（Pass1）し、フィルタ＋集計も行う（Pass2）
   function patchListView() {
     var table = document.querySelector('table');
@@ -122,6 +132,7 @@
     var SHAKEN_THRESHOLD = 60;
     var HOKEN_THRESHOLD = 45;
     var exclude = isExcludeEmpty();
+    var alertFilter = getAlertFilter();
 
     rows.forEach(function (row) {
       var cells = row.querySelectorAll('td');
@@ -133,16 +144,35 @@
         row.style.display = 'none';
         return;
       }
-      row.style.display = '';
-      stats.total++;
+
+      // 行ごとのアラート判定（カード集計用：alertFilterに依存しない）
+      var rowShakenAlert = false;
+      var rowHokenAlert = false;
       pairs.forEach(function (p) {
         var dateCell = cells[p.dateIdx];
         if (!dateCell) return;
         var d = diffDays(readOriginalDate(dateCell));
         if (d == null) return;
-        if (/車検/.test(p.label) && d <= SHAKEN_THRESHOLD) stats.shaken++;
-        if (/保険|満期/.test(p.label) && d <= HOKEN_THRESHOLD) stats.hoken++;
+        if (/車検/.test(p.label) && d <= SHAKEN_THRESHOLD) rowShakenAlert = true;
+        if (/保険|満期/.test(p.label) && d <= HOKEN_THRESHOLD) rowHokenAlert = true;
       });
+
+      // 集計はアラートフィルタに関係なく加算（カードは絶対値を表示）
+      stats.total++;
+      if (rowShakenAlert) stats.shaken++;
+      if (rowHokenAlert) stats.hoken++;
+
+      // アラートフィルタ適用（表示制御のみ）
+      if (alertFilter === 'shaken' && !rowShakenAlert) {
+        row.style.display = 'none';
+        return;
+      }
+      if (alertFilter === 'hoken' && !rowHokenAlert) {
+        row.style.display = 'none';
+        return;
+      }
+
+      row.style.display = '';
     });
 
     return stats;
@@ -155,26 +185,30 @@
     if (existing) existing.remove();
 
     var checked = isExcludeEmpty() ? 'checked' : '';
+    var activeFilter = getAlertFilter();
+    var shakenActive = activeFilter === 'shaken' ? ' yk-card-active' : '';
+    var hokenActive = activeFilter === 'hoken' ? ' yk-card-active' : '';
+    var totalActive = activeFilter === '' ? ' yk-card-active' : '';
     var wrap = document.createElement('div');
     wrap.id = 'yk-summary-wrap';
     wrap.setAttribute(PATCHED_ATTR, '1');
     wrap.innerHTML =
       '<div id="yk-summary-cards">' +
-        '<div class="yk-card yk-card-total">' +
+        '<div class="yk-card yk-card-total yk-card-clickable' + totalActive + '" data-yk-filter="">' +
           '<div class="yk-card-icon">🚗</div>' +
           '<div class="yk-card-body">' +
             '<div class="yk-card-label">管理車両数</div>' +
             '<div class="yk-card-value">' + stats.total + ' <span class="yk-card-unit">台</span></div>' +
           '</div>' +
         '</div>' +
-        '<div class="yk-card yk-card-shaken">' +
+        '<div class="yk-card yk-card-shaken yk-card-clickable' + shakenActive + '" data-yk-filter="shaken">' +
           '<div class="yk-card-icon">⚠️</div>' +
           '<div class="yk-card-body">' +
             '<div class="yk-card-label">車検アラート（60日以内）</div>' +
             '<div class="yk-card-value">' + stats.shaken + ' <span class="yk-card-unit">件</span></div>' +
           '</div>' +
         '</div>' +
-        '<div class="yk-card yk-card-hoken">' +
+        '<div class="yk-card yk-card-hoken yk-card-clickable' + hokenActive + '" data-yk-filter="hoken">' +
           '<div class="yk-card-icon">📅</div>' +
           '<div class="yk-card-body">' +
             '<div class="yk-card-label">保険アラート（45日以内）</div>' +
@@ -187,6 +221,7 @@
           '<input type="checkbox" id="yk-exclude-empty" ' + checked + '> ' +
           '<span>重機（登録番号なし）を除外する</span>' +
         '</label>' +
+        (activeFilter ? '<span class="yk-filter-status">🔍 ' + (activeFilter === 'shaken' ? '車検アラートのみ表示中' : '保険アラートのみ表示中') + '（カードをもう一度クリックで解除）</span>' : '') +
       '</div>';
 
     var table = document.querySelector('table');
@@ -204,6 +239,23 @@
         renderSummaryCards(newStats);
       });
     }
+
+    // カードクリック → アラートフィルタ切替
+    var clickableCards = wrap.querySelectorAll('.yk-card-clickable');
+    clickableCards.forEach(function (card) {
+      card.addEventListener('click', function () {
+        var filter = card.getAttribute('data-yk-filter') || '';
+        var current = getAlertFilter();
+        // 同じカードを再クリックで解除（管理車両数カードは常に解除）
+        if (filter === '' || filter === current) {
+          setAlertFilter('');
+        } else {
+          setAlertFilter(filter);
+        }
+        var newStats = patchListView();
+        renderSummaryCards(newStats);
+      });
+    });
   }
 
   // 詳細ビュー: kv-detail-field-label が「残日数」のフィールドを探し、

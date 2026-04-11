@@ -197,3 +197,44 @@ footer {
   accent-color: #1976d2;
   margin: 0;
 }
+
+#yk-filter-bar {
+  align-items: center;
+  gap: 12px;
+}
+
+.yk-filter-status {
+  font-size: 13px;
+  color: #1976d2;
+  font-weight: bold;
+  margin-right: auto;
+  padding: 8px 12px;
+  background: #e3f2fd;
+  border-radius: 6px;
+}
+
+/* ========== クリック可能カード ========== */
+.yk-card-clickable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.yk-card-clickable:active {
+  transform: translateY(0);
+}
+
+.yk-card-active {
+  outline: 3px solid #1976d2;
+  outline-offset: -3px;
+  box-shadow: 0 4px 20px rgba(25,118,210,0.25);
+}
+
+.yk-card-shaken.yk-card-active {
+  outline-color: #d32f2f;
+  box-shadow: 0 4px 20px rgba(211,47,47,0.3);
+}
+
+.yk-card-hoken.yk-card-active {
+  outline-color: #f57c00;
+  box-shadow: 0 4px 20px rgba(245,124,0,0.3);
+}
