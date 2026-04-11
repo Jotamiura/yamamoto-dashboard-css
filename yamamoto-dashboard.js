@@ -248,10 +248,10 @@
         '</div>' +
       '</div>' +
       '<div id="yk-filter-bar">' +
-        '<div class="yk-heavy-radio">' +
-          '<label><input type="radio" name="yk-heavy-mode" value="exclude" ' + (heavyMode === 'exclude' ? 'checked' : '') + '> 重機を除外</label>' +
-          '<label><input type="radio" name="yk-heavy-mode" value="include" ' + (heavyMode === 'include' ? 'checked' : '') + '> 重機を含む</label>' +
-          '<label><input type="radio" name="yk-heavy-mode" value="only" ' + (heavyMode === 'only' ? 'checked' : '') + '> 重機のみ</label>' +
+        '<div class="yk-heavy-toggle">' +
+          '<button type="button" class="yk-heavy-btn' + (heavyMode === 'exclude' ? ' yk-heavy-active' : '') + '" data-yk-heavy="exclude">重機を除外</button>' +
+          '<button type="button" class="yk-heavy-btn' + (heavyMode === 'include' ? ' yk-heavy-active' : '') + '" data-yk-heavy="include">重機を含む</button>' +
+          '<button type="button" class="yk-heavy-btn' + (heavyMode === 'only' ? ' yk-heavy-active' : '') + '" data-yk-heavy="only">重機のみ</button>' +
         '</div>' +
         (activeFilter ? '<span class="yk-filter-status">🔍 ' + (alertLabelMap[activeFilter] || '') + '（カードをもう一度クリックで解除）</span>' : '') +
         '<button type="button" class="yk-action-btn yk-action-csv" id="yk-btn-csv">📥 CSVダウンロード</button>' +
@@ -263,15 +263,16 @@
       table.parentElement.insertBefore(wrap, table);
     }
 
-    // 重機モードラジオのイベント
-    var radios = wrap.querySelectorAll('input[name="yk-heavy-mode"]');
-    radios.forEach(function (r) {
-      r.addEventListener('change', function () {
-        if (r.checked) {
-          setHeavyMode(r.value);
-          var newStats = patchListView();
-          renderSummaryCards(newStats);
-        }
+    // 重機モードボタンのイベント
+    var heavyButtons = wrap.querySelectorAll('.yk-heavy-btn');
+    heavyButtons.forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var mode = btn.getAttribute('data-yk-heavy');
+        setHeavyMode(mode);
+        var newStats = patchListView();
+        renderSummaryCards(newStats);
       });
     });
 

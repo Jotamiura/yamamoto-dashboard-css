@@ -252,35 +252,43 @@ footer {
   box-shadow: 0 4px 20px rgba(94,53,177,0.3);
 }
 
-/* 重機モードラジオ */
-.yk-heavy-radio {
+/* 重機モードトグルボタン */
+.yk-heavy-toggle {
   display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 16px;
-  background: #fff;
   border: 1px solid #cfd8dc;
   border-radius: 8px;
-  font-size: 13px;
-  color: #455a64;
-  font-weight: bold;
+  overflow: hidden;
   font-family: -apple-system, "Segoe UI", "Hiragino Sans", Meiryo, sans-serif;
 }
 
-.yk-heavy-radio label {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+.yk-heavy-btn {
+  padding: 8px 14px;
+  background: #fff;
+  border: none;
+  border-right: 1px solid #cfd8dc;
   cursor: pointer;
+  font-size: 13px;
+  color: #455a64;
+  font-weight: bold;
   user-select: none;
+  transition: background 0.15s, color 0.15s;
 }
 
-.yk-heavy-radio input[type="radio"] {
-  width: 14px;
-  height: 14px;
-  cursor: pointer;
-  accent-color: #1976d2;
-  margin: 0;
+.yk-heavy-btn:last-child {
+  border-right: none;
+}
+
+.yk-heavy-btn:hover {
+  background: #eceff1;
+}
+
+.yk-heavy-btn.yk-heavy-active {
+  background: #1976d2;
+  color: #fff;
+}
+
+.yk-heavy-btn.yk-heavy-active:hover {
+  background: #1565c0;
 }
 
 /* ========== アクションボタン（CSV / 印刷） ========== */
