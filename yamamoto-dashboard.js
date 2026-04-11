@@ -436,14 +436,30 @@
       var d = diffDays(startDate);
       if (d == null || d <= 0) return;  // 始期が過去・今日 → 新証券有効中
 
-      // バッジ注入: セクション見出しの h3 の横
-      var h3 = sec.header.querySelector('h3');
-      if (!h3) return;
-      var badge = document.createElement('span');
-      badge.className = 'yk-old-cert-badge';
-      badge.textContent = '旧証券あり';
-      badge.setAttribute(PATCHED_ATTR, '1');
-      h3.appendChild(badge);
+      // バッジ注入: タブボタン (タブ化されている場合) に優先して入れる、
+      // それ以外は sec.header (kv-detail-field) 直下に追加
+      var tabBtn = Array.from(document.querySelectorAll('.yk-tab-btn')).find(function (b) {
+        return (b.textContent || '').trim().replace(/旧証券あり/, '').trim() === title.trim();
+      });
+      if (tabBtn) {
+        // 既存バッジ削除
+        var tabBadge = tabBtn.querySelector('.yk-old-cert-badge');
+        if (tabBadge) tabBadge.remove();
+        var badge = document.createElement('span');
+        badge.className = 'yk-old-cert-badge';
+        badge.textContent = '旧証券あり';
+        badge.setAttribute(PATCHED_ATTR, '1');
+        tabBtn.appendChild(badge);
+      } else {
+        // タブが無い場合: kv-detail-field 直下にバッジ追加 (h3 は CSS で非表示なので外に置く)
+        var existing2 = sec.header.querySelector(':scope > .yk-old-cert-badge');
+        if (existing2) existing2.remove();
+        var badge2 = document.createElement('span');
+        badge2.className = 'yk-old-cert-badge';
+        badge2.textContent = '旧証券あり';
+        badge2.setAttribute(PATCHED_ATTR, '1');
+        sec.header.appendChild(badge2);
+      }
     });
   }
 
