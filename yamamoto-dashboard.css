@@ -19,9 +19,18 @@ table {
   box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important;
 }
 
-/* sticky を有効にするには .kv-main の overflow を解除する必要がある (cybozu developer community 参考) */
-.kv-main {
-  overflow: unset !important;
+/* sticky を有効にするには祖先の overflow を解除する必要がある
+   2022年のcybozu記事は .kv-main だが、現行kViewerは .overflow-x-auto と .kv-container */
+.kv-main,
+.kv-main-content,
+.overflow-x-auto {
+  overflow: visible !important;
+}
+
+/* kv-container は h-screen で縦スクロール担当。stickyの基準を window 相当に */
+.kv-container {
+  overflow: visible !important;
+  height: auto !important;
 }
 
 .v-modal {
