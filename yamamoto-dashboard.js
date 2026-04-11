@@ -222,6 +222,8 @@
           '<span>重機（登録番号なし）を除外する</span>' +
         '</label>' +
         (activeFilter ? '<span class="yk-filter-status">🔍 ' + (activeFilter === 'shaken' ? '車検アラートのみ表示中' : '保険アラートのみ表示中') + '（カードをもう一度クリックで解除）</span>' : '') +
+        '<button type="button" class="yk-action-btn yk-action-csv" id="yk-btn-csv">📥 CSVダウンロード</button>' +
+        '<button type="button" class="yk-action-btn yk-action-print" id="yk-btn-print">🖨️ 印刷</button>' +
       '</div>';
 
     var table = document.querySelector('table');
@@ -237,6 +239,35 @@
         // 再実行
         var newStats = patchListView();
         renderSummaryCards(newStats);
+      });
+    }
+
+    // 印刷ボタン
+    var btnPrint = document.getElementById('yk-btn-print');
+    if (btnPrint) {
+      btnPrint.addEventListener('click', function () {
+        // 印刷用ヘッダを差し込み（既存があれば置き換え）
+        var existingHeader = document.getElementById('yk-print-header');
+        if (existingHeader) existingHeader.remove();
+        var header = document.createElement('div');
+        header.id = 'yk-print-header';
+        var now = new Date();
+        var pad = function (n) { return n < 10 ? '0' + n : '' + n; };
+        header.textContent = '山本清掃様 車両管理ダッシュボード（' +
+          now.getFullYear() + '年' + (now.getMonth() + 1) + '月' + now.getDate() + '日 印刷）';
+        var table = document.querySelector('table');
+        if (table && table.parentElement) {
+          table.parentElement.insertBefore(header, table);
+        }
+        window.print();
+      });
+    }
+
+    // CSVダウンロードボタン
+    var btnCsv = document.getElementById('yk-btn-csv');
+    if (btnCsv) {
+      btnCsv.addEventListener('click', function () {
+        downloadVisibleRowsAsCsv();
       });
     }
 
@@ -294,6 +325,62 @@
       value.textContent = labelFor(d);
       styleFor(value, d);
     });
+  }
+
+  // 表示中の一覧テーブルをCSV化してダウンロード
+  function downloadVisibleRowsAsCsv() {
+    var table = document.querySelector('table');
+    if (!table) return;
+
+    var headerCells = Array.from(table.querySelectorAll('thead th'));
+    // 「詳細」列など空ヘッダはスキップ
+    var keepIdx = [];
+    var headers = [];
+    headerCells.forEach(function (th, i) {
+      var t = (th.textContent || '').trim();
+      if (!t) return;
+      keepIdx.push(i);
+      headers.push(t);
+    });
+
+    var lines = [headers.map(csvEscape).join(',')];
+    var rows = Array.from(table.querySelectorAll('tbody tr'));
+    rows.forEach(function (row) {
+      // display:none の行はスキップ（フィルタ適用後の行のみ出力）
+      if (row.style.display === 'none') return;
+      var cells = row.querySelectorAll('td');
+      var cols = keepIdx.map(function (i) {
+        var cell = cells[i];
+        if (!cell) return '';
+        return (cell.textContent || '').trim().replace(/\s+/g, ' ');
+      });
+      lines.push(cols.map(csvEscape).join(','));
+    });
+
+    // BOM 付き UTF-8（Excelで文字化け防止）
+    var csv = '\ufeff' + lines.join('\r\n');
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    var stamp = new Date();
+    var pad = function (n) { return n < 10 ? '0' + n : '' + n; };
+    var fname = '車両管理_' +
+      stamp.getFullYear() + pad(stamp.getMonth() + 1) + pad(stamp.getDate()) +
+      '_' + pad(stamp.getHours()) + pad(stamp.getMinutes()) + '.csv';
+    a.href = url;
+    a.download = fname;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  function csvEscape(s) {
+    var t = String(s == null ? '' : s);
+    if (/[",\r\n]/.test(t)) {
+      return '"' + t.replace(/"/g, '""') + '"';
+    }
+    return t;
   }
 
   // 日付を YYYY年M月D日 形式に整形（list/detail両方）

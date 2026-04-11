@@ -238,3 +238,112 @@ footer {
   outline-color: #f57c00;
   box-shadow: 0 4px 20px rgba(245,124,0,0.3);
 }
+
+/* ========== アクションボタン（CSV / 印刷） ========== */
+.yk-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #fff;
+  border: 1px solid #cfd8dc;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #455a64;
+  font-weight: bold;
+  font-family: -apple-system, "Segoe UI", "Hiragino Sans", Meiryo, sans-serif;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+
+.yk-action-btn:hover {
+  background: #eceff1;
+  border-color: #90a4ae;
+}
+
+.yk-action-btn:active {
+  transform: scale(0.97);
+}
+
+.yk-action-csv {
+  border-color: #43a047;
+  color: #2e7d32;
+}
+.yk-action-csv:hover {
+  background: #e8f5e9;
+}
+
+.yk-action-print {
+  border-color: #1976d2;
+  color: #1976d2;
+}
+.yk-action-print:hover {
+  background: #e3f2fd;
+}
+
+/* ========== 印刷用レイアウト ========== */
+@media print {
+  /* ナビ・ヘッダ・カード・フィルタを非表示 */
+  header, nav, footer,
+  #yk-summary-cards,
+  #yk-filter-bar,
+  .kv-app-title,
+  [class*="kv-header"],
+  [class*="kv-nav"] {
+    display: none !important;
+  }
+
+  body {
+    background: #fff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* テーブルを全幅・装飾控えめに */
+  table {
+    width: 100% !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    border: 1px solid #333 !important;
+    font-size: 11px !important;
+  }
+
+  thead th {
+    background: #ddd !important;
+    color: #000 !important;
+    border: 1px solid #333 !important;
+    padding: 6px 4px !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  tbody td {
+    border: 1px solid #999 !important;
+    padding: 4px !important;
+    font-size: 11px !important;
+  }
+
+  tbody tr {
+    page-break-inside: avoid;
+  }
+
+  /* 残日数バッジは印刷でも色を残す */
+  tbody td[data-yk-patched] {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* 印刷ヘッダ（JSで日付差し込み） */
+  #yk-print-header {
+    display: block !important;
+    font-size: 16px;
+    font-weight: bold;
+    margin: 12px 0 8px;
+    text-align: center;
+  }
+}
+
+/* 通常時は印刷ヘッダを非表示 */
+#yk-print-header {
+  display: none;
+}
