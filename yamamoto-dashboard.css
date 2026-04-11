@@ -566,6 +566,21 @@ footer {
   border-bottom-width: 3px !important;
 }
 
+/* 旧証券ありバッジ (自賠責・任意保険の見出しに注入) */
+.yk-old-cert-badge {
+  display: inline-block;
+  margin-left: 12px;
+  padding: 3px 10px;
+  background: linear-gradient(90deg, #f57c00, #ef6c00);
+  color: #fff !important;
+  font-size: 12px;
+  font-weight: bold;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(245,124,0,0.3);
+  vertical-align: middle;
+  letter-spacing: 0.02em;
+}
+
 /* タブ内のセクション h3 は重複表示なので非表示 */
 .kv-detail-field[data-yk-section] h3 {
   display: none !important;

@@ -391,6 +391,62 @@
     });
   }
 
+  // 詳細ビュー: 自賠責/任意保険 セクションで、始期が未来日付なら「旧証券あり」バッジを注入
+  // 業務ロジック: 新証券を先行入力する運用 → 始期 > today = 旧証券がまだ有効中
+  function patchOldCertBadge() {
+    var fields = Array.from(document.querySelectorAll('.kv-detail-field'));
+    if (!fields.length) return;
+
+    // セクションごとに始期フィールドを走査
+    var currentSection = null;
+    var currentSectionFields = [];
+    var sections = [];
+    fields.forEach(function (f) {
+      var h3 = f.querySelector('h3');
+      if (h3) {
+        if (currentSection) {
+          sections.push({ header: currentSection, fields: currentSectionFields });
+        }
+        currentSection = f;
+        currentSectionFields = [];
+      } else if (currentSection) {
+        currentSectionFields.push(f);
+      }
+    });
+    if (currentSection) sections.push({ header: currentSection, fields: currentSectionFields });
+
+    sections.forEach(function (sec) {
+      var title = (sec.header.querySelector('h3') || {}).textContent || '';
+      if (!/自賠責|任意保険/.test(title)) return;
+
+      // 既存バッジ削除
+      var existing = sec.header.querySelector('.yk-old-cert-badge');
+      if (existing) existing.remove();
+
+      // セクション内の「開始」フィールドを探す
+      var startDate = null;
+      sec.fields.forEach(function (f) {
+        var label = (f.querySelector('.kv-detail-field-label') || {}).textContent || '';
+        if (/開始|始期/.test(label.trim())) {
+          var val = f.querySelector('.kv-detail-field-value');
+          if (val) startDate = readOriginalDate(val);
+        }
+      });
+      if (!startDate) return;
+      var d = diffDays(startDate);
+      if (d == null || d <= 0) return;  // 始期が過去・今日 → 新証券有効中
+
+      // バッジ注入: セクション見出しの h3 の横
+      var h3 = sec.header.querySelector('h3');
+      if (!h3) return;
+      var badge = document.createElement('span');
+      badge.className = 'yk-old-cert-badge';
+      badge.textContent = '旧証券あり';
+      badge.setAttribute(PATCHED_ATTR, '1');
+      h3.appendChild(badge);
+    });
+  }
+
   // 詳細ビュー: セクションヘッダー (h3) を起点にタブUIへ再構成
   function patchDetailTabs() {
     var fields = Array.from(document.querySelectorAll('.kv-detail-field'));
@@ -770,6 +826,7 @@
       renderSummaryCards(stats);
       patchDetailTabs();
       patchDetailView();
+      patchOldCertBadge();
       patchFormatting();
     } catch (e) {
       console.error('[yamamoto-dashboard.js]', e);
