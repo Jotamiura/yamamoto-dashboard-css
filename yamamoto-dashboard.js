@@ -109,16 +109,19 @@
       var labelText = (label.textContent || '').trim();
       if (labelText !== '残日数' && !/まで$/.test(labelText)) return;
 
-      // 同じ grid-cols-12 の親まで上昇
-      var section = field.closest('.grid-cols-12') || field.parentElement;
-      if (!section) return;
-      // セクション内の他フィールドから日付を探す
+      // 残日数フィールドの直前のフィールドから日付を取る
+      // （車検満了日 → 残日数、任意保険満期 → 残日数、のように直前にペアで配置されている）
       var dateText = null;
-      var siblingFields = section.querySelectorAll('.kv-detail-field-value');
-      for (var i = 0; i < siblingFields.length; i++) {
-        if (siblingFields[i] === value) continue;
-        var t = (siblingFields[i].textContent || '').trim();
-        if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(t)) { dateText = t; break; }
+      var prev = field.previousElementSibling;
+      while (prev) {
+        if (prev.classList && prev.classList.contains('kv-detail-field')) {
+          var pv = prev.querySelector('.kv-detail-field-value');
+          if (pv) {
+            var t = (pv.textContent || '').trim();
+            if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(t)) { dateText = t; break; }
+          }
+        }
+        prev = prev.previousElementSibling;
       }
 
       var d = diffDays(dateText);
