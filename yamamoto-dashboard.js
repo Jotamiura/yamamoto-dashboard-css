@@ -110,16 +110,20 @@
       if (labelText !== '残日数' && !/まで$/.test(labelText)) return;
 
       // 残日数フィールドの直前のフィールドから日付を取る
-      // （車検満了日 → 残日数、任意保険満期 → 残日数、のように直前にペアで配置されている）
+      // ただしセクション境界（HR, h1〜h3 を含むラベル）を超えたら中断する
       var dateText = null;
       var prev = field.previousElementSibling;
-      while (prev) {
-        if (prev.classList && prev.classList.contains('kv-detail-field')) {
-          var pv = prev.querySelector('.kv-detail-field-value');
-          if (pv) {
-            var t = (pv.textContent || '').trim();
-            if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(t)) { dateText = t; break; }
-          }
+      var hops = 0;
+      while (prev && hops < 6) {
+        hops++;
+        // セクション境界判定: HR or 見出し
+        if (prev.querySelector && (prev.querySelector('hr') || prev.querySelector('h1, h2, h3, h4'))) {
+          break;
+        }
+        var pv = prev.querySelector ? prev.querySelector('.kv-detail-field-value') : null;
+        if (pv) {
+          var t = (pv.textContent || '').trim();
+          if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(t)) { dateText = t; break; }
         }
         prev = prev.previousElementSibling;
       }
