@@ -95,8 +95,73 @@
     else localStorage.removeItem(ALERT_FILTER_KEY);
   }
 
+  // モバイル版 (kv-mobile) の残日数再計算 + 色付け + 集計
+  function patchMobileListView() {
+    var rows = Array.from(document.querySelectorAll('.kv-mobile tr.kv-list-record'));
+    if (!rows.length) return null;
+    var stats = { total: 0, shaken: 0, hoken: 0, lease: 0 };
+    var SHAKEN = 60, HOKEN = 45, LEASE = 90;
+    var heavyMode = getHeavyMode();
+    var alertFilter = getAlertFilter();
+
+    rows.forEach(function (row) {
+      // 各行 = 1レコード = <td><dl>...</dl></td>
+      var dts = row.querySelectorAll('dt.kv-list-field-label');
+      var map = {}; // label → dd element
+      var regText = '';
+      dts.forEach(function (dt) {
+        var label = (dt.textContent || '').trim();
+        var dd = dt.nextElementSibling;
+        if (!dd) return;
+        map[label] = dd;
+        if (/登録番号/.test(label)) regText = (dd.textContent || '').trim();
+      });
+      var isHeavy = regText === '';
+
+      // Pass1: 残日数再計算 + 色付け + 日付フォーマット
+      var rowShaken = false, rowHoken = false, rowLease = false;
+      Object.keys(map).forEach(function (label) {
+        if (!/まで$/.test(label)) return;
+        var base = label.replace(/まで$/, '');
+        var dateDd = map[base] || map[base + '日'] || map[base + '満期'] || map[base.replace(/満了$/, '満了日')];
+        if (!dateDd) return;
+        var dateText = readOriginalDate(dateDd);
+        var d = diffDays(dateText);
+        var target = map[label];
+        if (target && d != null) {
+          target.setAttribute(PATCHED_ATTR, '1');
+          target.textContent = labelFor(d);
+          styleFor(target, d);
+        }
+        if (d == null) return;
+        if (/車検/.test(base) && d <= SHAKEN) rowShaken = true;
+        if (/リース/.test(base) && d <= LEASE) rowLease = true;
+        else if (/保険|満期/.test(base) && d <= HOKEN) rowHoken = true;
+      });
+
+      // 重機モード
+      if (heavyMode === 'exclude' && isHeavy) { row.style.display = 'none'; return; }
+      if (heavyMode === 'only' && !isHeavy) { row.style.display = 'none'; return; }
+
+      stats.total++;
+      if (rowShaken) stats.shaken++;
+      if (rowHoken) stats.hoken++;
+      if (rowLease) stats.lease++;
+
+      if (alertFilter === 'shaken' && !rowShaken) { row.style.display = 'none'; return; }
+      if (alertFilter === 'hoken' && !rowHoken) { row.style.display = 'none'; return; }
+      if (alertFilter === 'lease' && !rowLease) { row.style.display = 'none'; return; }
+      row.style.display = '';
+    });
+    return stats;
+  }
+
   // 一覧ビュー: 日付列から残日数を再計算（Pass1）し、フィルタ＋集計も行う（Pass2）
   function patchListView() {
+    // モバイル検出: kv-mobile が存在すれば先にそちらを処理
+    if (document.querySelector('.kv-mobile')) {
+      return patchMobileListView();
+    }
     var table = document.querySelector('table');
     if (!table) return null;
     var ths = Array.from(table.querySelectorAll('thead th'));
@@ -554,7 +619,7 @@
       }
     });
 
-    // 一覧テーブルのセル
+    // 一覧テーブルのセル (デスクトップ)
     var tableCells = document.querySelectorAll('table tbody td');
     tableCells.forEach(function (el) {
       if (el.getAttribute(FORMATTED_ATTR)) return;
@@ -568,6 +633,43 @@
         el.setAttribute(FORMATTED_ATTR, '1');
         el.textContent = asDate;
         return;
+      }
+
+      var asNum = formatNumberValue(raw);
+      if (asNum) {
+        el.setAttribute(FORMATTED_ATTR, '1');
+        el.textContent = asNum;
+        return;
+      }
+    });
+
+    // モバイル一覧の kv-list-field-value (dd)
+    var mobileValues = document.querySelectorAll('dd.kv-list-field-value');
+    mobileValues.forEach(function (el) {
+      if (el.getAttribute(FORMATTED_ATTR)) return;
+      if (el.getAttribute(PATCHED_ATTR)) return;
+      var raw = (el.textContent || '').trim();
+      if (!raw) return;
+
+      var asDate = formatDate(raw);
+      if (asDate) {
+        el.setAttribute(ORIG_DATE_ATTR, raw);
+        el.setAttribute(FORMATTED_ATTR, '1');
+        el.textContent = asDate;
+        return;
+      }
+
+      // ラベルで金額フィールド判定（dt.kv-list-field-label の直前要素を参照）
+      var dt = el.previousElementSibling;
+      var label = dt ? (dt.textContent || '').trim() : '';
+      if (isMoneyLabel(label)) {
+        var asMoney = formatMoneyValue(raw);
+        if (asMoney) {
+          el.setAttribute(FORMATTED_ATTR, '1');
+          el.textContent = asMoney;
+          el.classList.add('yk-money');
+          return;
+        }
       }
 
       var asNum = formatNumberValue(raw);
@@ -671,8 +773,9 @@
       attempts++;
       // 一覧 or 詳細のいずれかのコンテンツが現れたら準備完了
       var hasList = !!document.querySelector('table tbody tr td');
+      var hasMobile = !!document.querySelector('.kv-mobile dd.kv-list-field-value');
       var hasDetail = !!document.querySelector('.kv-detail-field-value');
-      if (hasList || hasDetail) {
+      if (hasList || hasMobile || hasDetail) {
         // hydration 完了から少し余裕を持って実行
         setTimeout(callback, 600);
         return;
