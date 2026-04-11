@@ -403,6 +403,31 @@
     return addCommas(m[1]) + m[2];
   }
 
+  // ラベルからお金フィールドかどうか判定
+  function isMoneyLabel(labelText) {
+    if (!labelText) return false;
+    return /料|金額|総額|単価|円|¥|費用|残価|取得|簿価|相場|リース料/.test(labelText);
+  }
+
+  // 数値を XX,XXX 円 形式に整形（お金フィールド用）
+  function formatMoneyValue(text) {
+    var raw = String(text || '').trim();
+    if (!raw) return null;
+    // 既に通貨表記が付いているならスキップ
+    if (/^[¥￥]/.test(raw) || /円$/.test(raw)) return null;
+    var m = raw.match(/^(\d+)$/);
+    if (!m) return null;
+    return addCommas(m[1]) + ' 円';
+  }
+
+  // 詳細ビュー: 同じフィールドのラベル要素を取得
+  function getFieldLabel(valueEl) {
+    var field = valueEl.closest ? valueEl.closest('.kv-detail-field') : null;
+    if (!field) return '';
+    var labelEl = field.querySelector('.kv-detail-field-label');
+    return labelEl ? (labelEl.textContent || '').trim() : '';
+  }
+
   // 一覧テーブル＋詳細ビューの値セルを走査してフォーマット適用
   function patchFormatting() {
     // 詳細ビュー
@@ -412,7 +437,13 @@
       // 残日数等は他のpatcherが書き換えるので、PATCHED_ATTRが付いていたら触らない
       if (el.getAttribute(PATCHED_ATTR)) return;
       var raw = (el.textContent || '').trim();
-      if (!raw) return;
+      if (!raw) {
+        // 空欄は「—」プレースホルダで見やすく
+        el.setAttribute(FORMATTED_ATTR, '1');
+        el.textContent = '—';
+        el.classList.add('yk-empty');
+        return;
+      }
 
       var asDate = formatDate(raw);
       if (asDate) {
@@ -420,6 +451,18 @@
         el.setAttribute(FORMATTED_ATTR, '1');
         el.textContent = asDate;
         return;
+      }
+
+      // ラベルでお金フィールド判定
+      var label = getFieldLabel(el);
+      if (isMoneyLabel(label)) {
+        var asMoney = formatMoneyValue(raw);
+        if (asMoney) {
+          el.setAttribute(FORMATTED_ATTR, '1');
+          el.textContent = asMoney;
+          el.classList.add('yk-money');
+          return;
+        }
       }
 
       var asNum = formatNumberValue(raw);

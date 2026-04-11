@@ -347,3 +347,71 @@ footer {
 #yk-print-header {
   display: none;
 }
+
+/* ========== 詳細画面の見やすさ向上 ========== */
+.kv-detail-field {
+  margin-bottom: 10px !important;
+}
+
+.kv-detail-field-label {
+  font-size: 12px !important;
+  color: #607d8b !important;
+  font-weight: bold !important;
+  letter-spacing: 0.02em !important;
+  margin-bottom: 4px !important;
+  text-transform: none !important;
+}
+
+.kv-detail-field-value {
+  background: #fff !important;
+  border: 1px solid #e0e0e0 !important;
+  border-radius: 6px !important;
+  padding: 10px 14px !important;
+  font-size: 15px !important;
+  color: #263238 !important;
+  min-height: 22px;
+  transition: border-color 0.15s;
+}
+
+.kv-detail-field-value:hover {
+  border-color: #90caf9 !important;
+}
+
+/* お金フィールドは右寄せ・太字 */
+.kv-detail-field-value.yk-money {
+  text-align: right !important;
+  font-weight: bold !important;
+  font-feature-settings: "tnum";
+  color: #1565c0 !important;
+  background: #f5faff !important;
+  border-color: #bbdefb !important;
+}
+
+/* 空欄プレースホルダ */
+.kv-detail-field-value.yk-empty {
+  color: #b0bec5 !important;
+  font-weight: normal !important;
+  background: #fafafa !important;
+}
+
+/* セクション見出しは余白多めで区切り感を出す */
+.kv-detail-field h3 {
+  margin: 24px 0 12px !important;
+  padding: 8px 0 8px 12px !important;
+  background: linear-gradient(90deg, #f5f7fa, transparent);
+  border-radius: 4px;
+}
+
+/* サブ見出し（■保険料 など） */
+.kv-detail-field div[style*="border-left:4px solid"],
+.kv-detail-field div[style*="font-size:13px"] {
+  margin-top: 12px !important;
+  margin-bottom: 4px !important;
+}
+
+/* HR を細い区切り線に */
+.kv-detail-field hr {
+  border: none !important;
+  border-top: 1px dashed #cfd8dc !important;
+  margin: 18px 0 !important;
+}
