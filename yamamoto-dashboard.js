@@ -97,59 +97,34 @@
     });
   }
 
-  // 詳細ビュー: 「残日数」「○○まで」というラベルを持つフィールドの値を、同じセクションの日付フィールドから再計算
+  // 詳細ビュー: kv-detail-field-label が「残日数」のフィールドを探し、
+  // 同じ grid-cols-12 セクションにある日付フィールドから再計算
   function patchDetailView() {
-    // ラベル要素を探す（kViewer は様々なクラス名で囲っている可能性あり）
-    var allLabels = document.querySelectorAll('label, .label, [class*="label"], [class*="Label"]');
-    allLabels.forEach(function (lab) {
-      var txt = (lab.textContent || '').trim();
-      if (txt !== '残日数' && !/まで$/.test(txt)) return;
+    var fields = document.querySelectorAll('.kv-detail-field');
+    if (!fields.length) return;
+    fields.forEach(function (field) {
+      var label = field.querySelector('.kv-detail-field-label');
+      var value = field.querySelector('.kv-detail-field-value');
+      if (!label || !value) return;
+      var labelText = (label.textContent || '').trim();
+      if (labelText !== '残日数' && !/まで$/.test(labelText)) return;
 
-      // ラベルから値要素を取得（次の兄弟 or 親の中の値要素）
-      var valEl = null;
-      var sib = lab.nextElementSibling;
-      if (sib) valEl = sib;
-      if (!valEl) {
-        var parent = lab.parentElement;
-        if (parent) {
-          var cands = parent.querySelectorAll('div, span, p');
-          for (var i = 0; i < cands.length; i++) {
-            if (cands[i] !== lab && /日前|日後|日超過|日経過/.test(cands[i].textContent)) {
-              valEl = cands[i];
-              break;
-            }
-          }
-        }
-      }
-      if (!valEl) return;
-
-      // 同じセクションから日付を探す
-      var section = lab.closest('.row, .group, .section, [class*="row"], [class*="Row"], [class*="group"], [class*="Group"]')
-                  || lab.parentElement.parentElement
-                  || lab.parentElement;
+      // 同じ grid-cols-12 の親まで上昇
+      var section = field.closest('.grid-cols-12') || field.parentElement;
       if (!section) return;
+      // セクション内の他フィールドから日付を探す
       var dateText = null;
-      var nodes = section.querySelectorAll('*');
-      for (var j = 0; j < nodes.length; j++) {
-        var t = (nodes[j].textContent || '').trim();
+      var siblingFields = section.querySelectorAll('.kv-detail-field-value');
+      for (var i = 0; i < siblingFields.length; i++) {
+        if (siblingFields[i] === value) continue;
+        var t = (siblingFields[i].textContent || '').trim();
         if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(t)) { dateText = t; break; }
-      }
-      if (!dateText) {
-        // section の親まで広げて再検索
-        var up = section.parentElement;
-        if (up) {
-          var nodes2 = up.querySelectorAll('*');
-          for (var k = 0; k < nodes2.length; k++) {
-            var tt = (nodes2[k].textContent || '').trim();
-            if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(tt)) { dateText = tt; break; }
-          }
-        }
       }
 
       var d = diffDays(dateText);
-      valEl.setAttribute(PATCHED_ATTR, '1');
-      valEl.textContent = labelFor(d);
-      styleFor(valEl, d);
+      value.setAttribute(PATCHED_ATTR, '1');
+      value.textContent = labelFor(d);
+      styleFor(value, d);
     });
   }
 
