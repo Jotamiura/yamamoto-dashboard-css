@@ -19,12 +19,13 @@ table {
   box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important;
 }
 
-/* テーブルの親ラッパもoverflow解除 (sticky祖先制限対策) */
-table, table * {
-  /* sticky は祖先 overflow に制約されるので明示的に visible 化 */
+/* sticky を有効にするには .kv-main の overflow を解除する必要がある (cybozu developer community 参考) */
+.kv-main {
+  overflow: unset !important;
 }
-[class*="kv-table"], [class*="table-wrap"], [class*="TableWrap"] {
-  overflow: visible !important;
+
+.v-modal {
+  display: none !important;
 }
 
 /* テーブルヘッダー */
@@ -77,8 +78,9 @@ a[href*="detail"]:hover {
   background: #1565c0 !important;
 }
 
-/* テーブルカラムヘッダー (thead) を sticky + 中央揃え */
+/* テーブルカラムヘッダー (thead) を sticky + 中央揃え (kv-main overflow unsetが前提) */
 thead th {
+  position: -webkit-sticky !important;
   position: sticky !important;
   top: 0 !important;
   z-index: 30 !important;
