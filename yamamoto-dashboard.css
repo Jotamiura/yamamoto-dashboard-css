@@ -87,3 +87,76 @@ footer {
   margin-top: 24px !important;
   color: #90a4ae !important;
 }
+
+/* ========== 集計カード ========== */
+#yk-summary-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin: 20px 0 24px;
+  font-family: -apple-system, "Segoe UI", "Hiragino Sans", Meiryo, sans-serif;
+}
+
+@media (max-width: 768px) {
+  #yk-summary-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+.yk-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  border-left: 6px solid #1976d2;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.yk-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+
+.yk-card-total { border-left-color: #1976d2; }
+.yk-card-shaken { border-left-color: #d32f2f; }
+.yk-card-hoken { border-left-color: #f57c00; }
+
+.yk-card-icon {
+  font-size: 40px;
+  line-height: 1;
+}
+
+.yk-card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.yk-card-label {
+  font-size: 13px;
+  color: #607d8b;
+  font-weight: bold;
+  margin-bottom: 4px;
+  letter-spacing: 0.02em;
+}
+
+.yk-card-value {
+  font-size: 36px;
+  font-weight: bold;
+  line-height: 1;
+  color: #263238;
+  font-feature-settings: "tnum";
+}
+
+.yk-card-total .yk-card-value { color: #1976d2; }
+.yk-card-shaken .yk-card-value { color: #d32f2f; }
+.yk-card-hoken .yk-card-value { color: #f57c00; }
+
+.yk-card-unit {
+  font-size: 16px;
+  font-weight: normal;
+  color: #78909c;
+  margin-left: 4px;
+}

@@ -62,27 +62,31 @@
   }
 
   // 一覧ビュー: thead から「○○まで」列を見つけて、対応する日付列から再計算
+  // 同時に集計値（管理車両数 / 車検アラート / 保険アラート）も計算する
   function patchListView() {
     var table = document.querySelector('table');
-    if (!table) return;
+    if (!table) return null;
     var ths = Array.from(table.querySelectorAll('thead th'));
-    if (!ths.length) return;
+    if (!ths.length) return null;
     var headers = ths.map(function (th) { return th.textContent.trim(); });
-    var pairs = []; // [{dateIdx, daysIdx}]
+    var pairs = []; // [{dateIdx, daysIdx, label}]
     headers.forEach(function (h, i) {
       if (!/まで$/.test(h)) return;
       var base = h.replace(/まで$/, '');
       var dateIdx = headers.findIndex(function (h2) {
         return h2 === base || h2 === base + '日' || h2 === base + '満期' || h2 === base.replace(/満了$/, '満了日');
       });
-      if (dateIdx < 0) {
-        // Fallback: use the column immediately to the left
-        dateIdx = i - 1;
-      }
-      pairs.push({ dateIdx: dateIdx, daysIdx: i });
+      if (dateIdx < 0) dateIdx = i - 1;
+      pairs.push({ dateIdx: dateIdx, daysIdx: i, label: base });
     });
 
-    table.querySelectorAll('tbody tr').forEach(function (row) {
+    var stats = { total: 0, shaken: 0, hoken: 0 };
+    var SHAKEN_THRESHOLD = 60;
+    var HOKEN_THRESHOLD = 45;
+
+    var rows = table.querySelectorAll('tbody tr');
+    rows.forEach(function (row) {
+      stats.total++;
       var cells = row.querySelectorAll('td');
       pairs.forEach(function (p) {
         var target = cells[p.daysIdx];
@@ -93,8 +97,54 @@
         target.setAttribute(PATCHED_ATTR, '1');
         target.textContent = labelFor(d);
         styleFor(target, d);
+        // アラート集計
+        if (d != null) {
+          if (/車検/.test(p.label) && d <= SHAKEN_THRESHOLD) stats.shaken++;
+          if (/保険|満期/.test(p.label) && d <= HOKEN_THRESHOLD) stats.hoken++;
+        }
       });
     });
+
+    return stats;
+  }
+
+  // 集計カードをタイトル直下に注入
+  function renderSummaryCards(stats) {
+    if (!stats) return;
+    var existing = document.getElementById('yk-summary-cards');
+    if (existing) existing.remove();
+
+    var card = document.createElement('div');
+    card.id = 'yk-summary-cards';
+    card.setAttribute(PATCHED_ATTR, '1');
+    card.innerHTML =
+      '<div class="yk-card yk-card-total">' +
+        '<div class="yk-card-icon">🚗</div>' +
+        '<div class="yk-card-body">' +
+          '<div class="yk-card-label">管理車両数</div>' +
+          '<div class="yk-card-value">' + stats.total + ' <span class="yk-card-unit">台</span></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="yk-card yk-card-shaken">' +
+        '<div class="yk-card-icon">⚠️</div>' +
+        '<div class="yk-card-body">' +
+          '<div class="yk-card-label">車検アラート（60日以内）</div>' +
+          '<div class="yk-card-value">' + stats.shaken + ' <span class="yk-card-unit">件</span></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="yk-card yk-card-hoken">' +
+        '<div class="yk-card-icon">📅</div>' +
+        '<div class="yk-card-body">' +
+          '<div class="yk-card-label">保険アラート（45日以内）</div>' +
+          '<div class="yk-card-value">' + stats.hoken + ' <span class="yk-card-unit">件</span></div>' +
+        '</div>' +
+      '</div>';
+
+    // タイトル直下 or テーブル直前に挿入
+    var table = document.querySelector('table');
+    if (table && table.parentElement) {
+      table.parentElement.insertBefore(card, table);
+    }
   }
 
   // 詳細ビュー: kv-detail-field-label が「残日数」のフィールドを探し、
@@ -140,7 +190,8 @@
     if (running) return;
     running = true;
     try {
-      patchListView();
+      var stats = patchListView();
+      renderSummaryCards(stats);
       patchDetailView();
     } catch (e) {
       console.error('[yamamoto-dashboard.js]', e);
