@@ -249,9 +249,9 @@
       '</div>' +
       '<div id="yk-filter-bar">' +
         '<div class="yk-heavy-toggle">' +
-          '<button type="button" class="yk-heavy-btn' + (heavyMode === 'exclude' ? ' yk-heavy-active' : '') + '" data-yk-heavy="exclude">重機を除外</button>' +
-          '<button type="button" class="yk-heavy-btn' + (heavyMode === 'include' ? ' yk-heavy-active' : '') + '" data-yk-heavy="include">重機を含む</button>' +
-          '<button type="button" class="yk-heavy-btn' + (heavyMode === 'only' ? ' yk-heavy-active' : '') + '" data-yk-heavy="only">重機のみ</button>' +
+          '<button type="button" class="yk-heavy-btn' + (heavyMode === 'exclude' ? ' yk-heavy-active' : '') + '" data-yk-heavy="exclude" onclick="window.ykSetHeavy && window.ykSetHeavy(this,\'exclude\')">重機を除外</button>' +
+          '<button type="button" class="yk-heavy-btn' + (heavyMode === 'include' ? ' yk-heavy-active' : '') + '" data-yk-heavy="include" onclick="window.ykSetHeavy && window.ykSetHeavy(this,\'include\')">重機を含む</button>' +
+          '<button type="button" class="yk-heavy-btn' + (heavyMode === 'only' ? ' yk-heavy-active' : '') + '" data-yk-heavy="only" onclick="window.ykSetHeavy && window.ykSetHeavy(this,\'only\')">重機のみ</button>' +
         '</div>' +
         (activeFilter ? '<span class="yk-filter-status">🔍 ' + (alertLabelMap[activeFilter] || '') + '（カードをもう一度クリックで解除）</span>' : '') +
         '<button type="button" class="yk-action-btn yk-action-csv" id="yk-btn-csv">📥 CSVダウンロード</button>' +
@@ -312,13 +312,53 @@
     });
   }
 
+  // ヘッダータイトルバーを JS で注入（kViewerのタイトル要素クラスが不安定なためCSS依存しない）
+  function patchTitleBar() {
+    if (document.getElementById('yk-title-bar')) return;
+    // ページ内で「ダッシュボード」または「kViewer」以外で最初に出てくる大見出しを探す
+    var candidates = Array.from(document.querySelectorAll('h1, h2, [class*="title" i], [class*="Title"]'));
+    var titleEl = null;
+    var titleText = '';
+    for (var i = 0; i < candidates.length; i++) {
+      var el = candidates[i];
+      var t = (el.textContent || '').trim();
+      // kViewer のグローバルロゴ「kViewer」は除外
+      if (!t || t === 'kViewer' || t.length > 100) continue;
+      // ダッシュボードや顧客名らしき文字列
+      if (/ダッシュボード|様|株式会社|管理|一覧/.test(t)) {
+        titleEl = el;
+        titleText = t;
+        break;
+      }
+    }
+    if (!titleEl) {
+      // フォールバック: 最初の h1
+      var h1 = document.querySelector('h1');
+      if (h1) {
+        titleEl = h1;
+        titleText = (h1.textContent || '').trim();
+      }
+    }
+    if (!titleText) return;
+
+    // 既存タイトル要素を非表示にして、自前のバーを最上部に挿入
+    if (titleEl) titleEl.style.display = 'none';
+    var bar = document.createElement('div');
+    bar.id = 'yk-title-bar';
+    bar.setAttribute(PATCHED_ATTR, '1');
+    bar.textContent = titleText;
+    var container = document.querySelector('main') || document.body;
+    container.insertBefore(bar, container.firstChild);
+  }
+
   // 詳細ビュー: セクションヘッダー (h3) を起点にタブUIへ再構成
   function patchDetailTabs() {
-    // 既にタブ化済みなら何もしない
-    if (document.getElementById('yk-detail-tabs')) return;
-
     var fields = Array.from(document.querySelectorAll('.kv-detail-field'));
     if (!fields.length) return;
+
+    // 既にタブ化済み: 削除して再注入（kViewer再描画でDOM位置がずれる対策）
+    var existing = document.getElementById('yk-detail-tabs');
+    if (existing) existing.remove();
 
     // セクション分割: h3 があるフィールドを境界とする
     var sections = []; // [{title, color, fields:[]}]
@@ -341,21 +381,22 @@
 
     if (sections.length < 2) return;
 
-    // タブバー生成。grid-cols-12 の中に置くと1セル幅になるので grid-column span を全幅に
-    var parent = fields[0].parentElement;
-    if (!parent) return;
+    // タブバー生成。kViewerが再描画でDOM位置を動かす可能性があるため、
+    // 安定したコンテナ (kv-detail-page or main) のすぐ下に固定挿入する
+    var stableContainer = document.querySelector('.kv-detail-page')
+                       || document.querySelector('main')
+                       || document.body;
     var tabs = document.createElement('div');
     tabs.id = 'yk-detail-tabs';
     tabs.setAttribute(PATCHED_ATTR, '1');
-    tabs.style.gridColumn = '1 / -1';
-    tabs.style.width = '100%';
     var tabHtml = '<div class="yk-tab-bar">';
     sections.forEach(function (s, i) {
-      tabHtml += '<button type="button" class="yk-tab-btn' + (i === 0 ? ' yk-tab-active' : '') + '" data-yk-tab="' + i + '" style="border-bottom-color:' + s.color + '">' + s.title + '</button>';
+      tabHtml += '<button type="button" class="yk-tab-btn' + (i === 0 ? ' yk-tab-active' : '') + '" data-yk-tab="' + i + '" style="border-bottom-color:' + s.color + '" onclick="window.ykSetTab && window.ykSetTab(this,' + i + ')">' + s.title + '</button>';
     });
     tabHtml += '</div>';
     tabs.innerHTML = tabHtml;
-    parent.insertBefore(tabs, fields[0]);
+    // stableContainer の最初の子として挿入 (= 最上部)
+    stableContainer.insertBefore(tabs, stableContainer.firstChild);
 
     // 各セクションに data 属性を付与し、初期は1つ目のみ表示
     sections.forEach(function (s, i) {
@@ -578,6 +619,25 @@
   }
 
   // ============ グローバル委譲ハンドラ（一度だけ登録、wrap再生成で失われない） ============
+  // window.ykSetHeavy: inline onclick から呼ばれるグローバル関数（最も確実な発火経路）
+  window.ykSetHeavy = function (btn, mode) {
+    setHeavyMode(mode);
+    var newStats = patchListView();
+    renderSummaryCards(newStats);
+  };
+  // window.ykSetTab: inline onclick タブ用
+  window.ykSetTab = function (btn, idx) {
+    var tabsBar = btn && btn.closest('#yk-detail-tabs');
+    if (tabsBar) {
+      tabsBar.querySelectorAll('.yk-tab-btn').forEach(function (b) {
+        b.classList.toggle('yk-tab-active', b === btn);
+      });
+    }
+    document.querySelectorAll('.kv-detail-field[data-yk-section]').forEach(function (f) {
+      f.style.display = f.getAttribute('data-yk-section') === String(idx) ? '' : 'none';
+    });
+  };
+
   var globalDelegationInstalled = false;
   function installGlobalDelegation() {
     if (globalDelegationInstalled) return;
@@ -618,6 +678,7 @@
     running = true;
     try {
       installGlobalDelegation();
+      patchTitleBar();
       var stats = patchListView();
       renderSummaryCards(stats);
       patchDetailTabs();

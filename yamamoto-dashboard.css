@@ -66,30 +66,21 @@ a[href*="detail"]:hover {
   background: #1565c0 !important;
 }
 
-/* タイトル装飾 (中央揃え + sticky) — h1/h2 やtitle系すべてに適用 */
-.kv-app-title,
-[class*="app-title"],
-[class*="page-title"],
-h1[class*="title"],
-h2[class*="title"],
-.kv-app-header h1,
-.kv-app-header h2,
-.kv-page > h1:first-child,
-main > h1:first-child,
-main h1:first-of-type,
-[class*="ViewTitle"],
-[class*="view-title"] {
+/* JS注入のタイトルバー */
+#yk-title-bar {
   background: linear-gradient(90deg, #1976d2, #42a5f5) !important;
   color: #fff !important;
-  padding: 16px 24px !important;
+  padding: 14px 24px !important;
   border-radius: 8px !important;
-  margin: 0 0 16px 0 !important;
-  font-size: 22px !important;
+  margin: 8px 0 16px 0 !important;
+  font-size: 20px !important;
+  font-weight: bold !important;
   box-shadow: 0 2px 6px rgba(25,118,210,0.2) !important;
   text-align: center !important;
   position: sticky !important;
   top: 0 !important;
   z-index: 100 !important;
+  font-family: -apple-system, "Segoe UI", "Hiragino Sans", Meiryo, sans-serif !important;
 }
 
 /* 詳細画面の見出し */
