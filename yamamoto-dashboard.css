@@ -10,14 +10,21 @@ h1, .title, [class*="title"] {
   color: #1976d2 !important;
 }
 
-/* テーブル全体 */
+/* テーブル全体（overflow:hidden を外して thead の sticky を有効化） */
 table {
   border-collapse: separate !important;
   border-spacing: 0 !important;
   background: #fff !important;
   border-radius: 8px !important;
-  overflow: hidden !important;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important;
+}
+
+/* テーブルの親ラッパもoverflow解除 (sticky祖先制限対策) */
+table, table * {
+  /* sticky は祖先 overflow に制約されるので明示的に visible 化 */
+}
+[class*="kv-table"], [class*="table-wrap"], [class*="TableWrap"] {
+  overflow: visible !important;
 }
 
 /* テーブルヘッダー */
@@ -265,19 +272,27 @@ footer {
 }
 
 .yk-heavy-btn {
+  display: inline-block;
   padding: 8px 14px;
   background: #fff;
   border: none;
   border-right: 1px solid #cfd8dc;
   cursor: pointer;
   font-size: 13px;
-  color: #455a64;
+  color: #455a64 !important;
   font-weight: bold;
   user-select: none;
   transition: background 0.15s, color 0.15s;
   position: relative;
-  z-index: 51;
+  z-index: 999;
   pointer-events: auto !important;
+  text-decoration: none !important;
+  text-align: center;
+  min-width: 100px;
+}
+
+.yk-heavy-btn.yk-heavy-active {
+  color: #fff !important;
 }
 
 #yk-filter-bar {

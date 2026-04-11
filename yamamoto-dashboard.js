@@ -249,9 +249,9 @@
       '</div>' +
       '<div id="yk-filter-bar">' +
         '<div class="yk-heavy-toggle">' +
-          '<button type="button" class="yk-heavy-btn' + (heavyMode === 'exclude' ? ' yk-heavy-active' : '') + '" data-yk-heavy="exclude" onclick="window.ykSetHeavy && window.ykSetHeavy(this,\'exclude\')">重機を除外</button>' +
-          '<button type="button" class="yk-heavy-btn' + (heavyMode === 'include' ? ' yk-heavy-active' : '') + '" data-yk-heavy="include" onclick="window.ykSetHeavy && window.ykSetHeavy(this,\'include\')">重機を含む</button>' +
-          '<button type="button" class="yk-heavy-btn' + (heavyMode === 'only' ? ' yk-heavy-active' : '') + '" data-yk-heavy="only" onclick="window.ykSetHeavy && window.ykSetHeavy(this,\'only\')">重機のみ</button>' +
+          '<a href="javascript:void(0)" class="yk-heavy-btn' + (heavyMode === 'exclude' ? ' yk-heavy-active' : '') + '" data-yk-heavy="exclude" onclick="window.ykSetHeavy(this,\'exclude\');return false;">重機を除外</a>' +
+          '<a href="javascript:void(0)" class="yk-heavy-btn' + (heavyMode === 'include' ? ' yk-heavy-active' : '') + '" data-yk-heavy="include" onclick="window.ykSetHeavy(this,\'include\');return false;">重機を含む</a>' +
+          '<a href="javascript:void(0)" class="yk-heavy-btn' + (heavyMode === 'only' ? ' yk-heavy-active' : '') + '" data-yk-heavy="only" onclick="window.ykSetHeavy(this,\'only\');return false;">重機のみ</a>' +
         '</div>' +
         (activeFilter ? '<span class="yk-filter-status">🔍 ' + (alertLabelMap[activeFilter] || '') + '（カードをもう一度クリックで解除）</span>' : '') +
         '<button type="button" class="yk-action-btn yk-action-csv" id="yk-btn-csv">📥 CSVダウンロード</button>' +
