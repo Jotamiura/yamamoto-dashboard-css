@@ -75,8 +75,8 @@
   var HEAVY_MODE_KEY = 'yk-heavy-mode-yamamoto';
   function getHeavyMode() {
     var v = localStorage.getItem(HEAVY_MODE_KEY);
-    if (v === 'include' || v === 'only') return v;
-    // 旧キー yk-exclude-empty-yamamoto との後方互換
+    if (v === 'exclude' || v === 'include' || v === 'only') return v;
+    // 新キー未設定の時のみ旧キーをフォールバック確認
     var legacy = localStorage.getItem('yk-exclude-empty-yamamoto');
     if (legacy === '0') return 'include';
     return 'exclude';
@@ -662,27 +662,58 @@
     }
   }
 
-  // 初回 + 遅延 + DOM変化監視
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', run);
-  } else {
-    run();
+  // React (kViewer) の hydration 完了を待ってから run する。
+  // 早すぎる DOM 変更は React error #418 を引き起こす。
+  function waitForKviewerReady(callback) {
+    var attempts = 0;
+    var maxAttempts = 50; // 最大10秒待つ
+    var check = function () {
+      attempts++;
+      // 一覧 or 詳細のいずれかのコンテンツが現れたら準備完了
+      var hasList = !!document.querySelector('table tbody tr td');
+      var hasDetail = !!document.querySelector('.kv-detail-field-value');
+      if (hasList || hasDetail) {
+        // hydration 完了から少し余裕を持って実行
+        setTimeout(callback, 600);
+        return;
+      }
+      if (attempts >= maxAttempts) {
+        callback();
+        return;
+      }
+      setTimeout(check, 200);
+    };
+    check();
   }
-  setTimeout(run, 500);
-  setTimeout(run, 1500);
-  setTimeout(run, 3000);
 
-  var debounce;
-  var observer = new MutationObserver(function (mutations) {
-    // 自分の patch によるテキスト書き換えは無視
-    var meaningful = mutations.some(function (m) {
-      return Array.from(m.addedNodes).some(function (n) {
-        return n.nodeType === 1 && !n.hasAttribute(PATCHED_ATTR);
+  var observerStarted = false;
+  function startObserver() {
+    if (observerStarted) return;
+    observerStarted = true;
+    var debounce;
+    var observer = new MutationObserver(function (mutations) {
+      var meaningful = mutations.some(function (m) {
+        return Array.from(m.addedNodes).some(function (n) {
+          return n.nodeType === 1 && !n.hasAttribute(PATCHED_ATTR);
+        });
       });
+      if (!meaningful) return;
+      clearTimeout(debounce);
+      debounce = setTimeout(run, 400);
     });
-    if (!meaningful) return;
-    clearTimeout(debounce);
-    debounce = setTimeout(run, 250);
-  });
-  observer.observe(document.body, { childList: true, subtree: true });
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
+
+  function bootstrap() {
+    waitForKviewerReady(function () {
+      run();
+      startObserver();
+    });
+  }
+
+  if (document.readyState === 'complete') {
+    bootstrap();
+  } else {
+    window.addEventListener('load', bootstrap);
+  }
 })();
