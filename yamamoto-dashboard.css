@@ -1,0 +1,89 @@
+/* 山本清掃様 車両管理ダッシュボード - Cloud Run版風カスタマイズ */
+
+body {
+  background: #f5f7fa !important;
+  font-family: -apple-system, "Segoe UI", "Hiragino Sans", Meiryo, sans-serif !important;
+}
+
+/* タイトルヘッダー */
+h1, .title, [class*="title"] {
+  color: #1976d2 !important;
+}
+
+/* テーブル全体 */
+table {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  background: #fff !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important;
+}
+
+/* テーブルヘッダー */
+thead th {
+  background: linear-gradient(180deg, #1976d2, #1565c0) !important;
+  color: #fff !important;
+  font-weight: bold !important;
+  padding: 12px 10px !important;
+  border-bottom: 2px solid #0d47a1 !important;
+}
+
+/* 行ホバー */
+tbody tr:hover {
+  background: #e3f2fd !important;
+  transition: background 0.15s;
+}
+
+/* 行の縞模様 */
+tbody tr:nth-child(even) {
+  background: #fafbfc;
+}
+
+/* セル余白 */
+tbody td {
+  padding: 10px !important;
+  border-bottom: 1px solid #eceff1 !important;
+}
+
+/* 「0日超過」「XX日前」を期限切れバッジ風に */
+td:has-text("0日超過"),
+td:has-text("日超過") {
+  font-weight: bold !important;
+}
+
+/* 「詳細」ボタン */
+a[href*="detail"], button[class*="detail"] {
+  background: #1976d2 !important;
+  color: #fff !important;
+  padding: 6px 14px !important;
+  border-radius: 4px !important;
+  text-decoration: none !important;
+  font-size: 13px !important;
+  font-weight: bold !important;
+}
+a[href*="detail"]:hover {
+  background: #1565c0 !important;
+}
+
+/* タイトル装飾 */
+.kv-app-title, [class*="app-title"] {
+  background: linear-gradient(90deg, #1976d2, #42a5f5) !important;
+  color: #fff !important;
+  padding: 16px 24px !important;
+  border-radius: 8px !important;
+  margin-bottom: 16px !important;
+  font-size: 22px !important;
+  box-shadow: 0 2px 6px rgba(25,118,210,0.2) !important;
+}
+
+/* 詳細画面の見出し */
+h3 {
+  margin: 16px 0 8px 0 !important;
+}
+
+/* フッター */
+footer {
+  margin-top: 24px !important;
+  color: #90a4ae !important;
+}
