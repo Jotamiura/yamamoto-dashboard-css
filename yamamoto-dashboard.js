@@ -71,13 +71,18 @@
     return null;
   }
 
-  var STORAGE_KEY = 'yk-exclude-empty-yamamoto';
-  function isExcludeEmpty() {
-    var v = localStorage.getItem(STORAGE_KEY);
-    return v === null ? true : v === '1';
+  // 重機表示モード: 'exclude' (除外、デフォルト) / 'include' (含む) / 'only' (重機のみ)
+  var HEAVY_MODE_KEY = 'yk-heavy-mode-yamamoto';
+  function getHeavyMode() {
+    var v = localStorage.getItem(HEAVY_MODE_KEY);
+    if (v === 'include' || v === 'only') return v;
+    // 旧キー yk-exclude-empty-yamamoto との後方互換
+    var legacy = localStorage.getItem('yk-exclude-empty-yamamoto');
+    if (legacy === '0') return 'include';
+    return 'exclude';
   }
-  function setExcludeEmpty(on) {
-    localStorage.setItem(STORAGE_KEY, on ? '1' : '0');
+  function setHeavyMode(mode) {
+    localStorage.setItem(HEAVY_MODE_KEY, mode);
   }
 
   // アラートフィルタ: '' / 'shaken' / 'hoken'
@@ -128,10 +133,11 @@
     });
 
     // Pass 2: フィルタ適用 + 集計（表示行のみ対象）
-    var stats = { total: 0, shaken: 0, hoken: 0 };
+    var stats = { total: 0, shaken: 0, hoken: 0, lease: 0 };
     var SHAKEN_THRESHOLD = 60;
     var HOKEN_THRESHOLD = 45;
-    var exclude = isExcludeEmpty();
+    var LEASE_THRESHOLD = 90;
+    var heavyMode = getHeavyMode();
     var alertFilter = getAlertFilter();
 
     rows.forEach(function (row) {
@@ -140,7 +146,12 @@
       var regText = (regIdx >= 0 && cells[regIdx]) ? cells[regIdx].textContent.trim() : '';
       var isHeavyEquipment = regText === '';
 
-      if (exclude && isHeavyEquipment) {
+      // 重機表示モード適用
+      if (heavyMode === 'exclude' && isHeavyEquipment) {
+        row.style.display = 'none';
+        return;
+      }
+      if (heavyMode === 'only' && !isHeavyEquipment) {
         row.style.display = 'none';
         return;
       }
@@ -148,19 +159,22 @@
       // 行ごとのアラート判定（カード集計用：alertFilterに依存しない）
       var rowShakenAlert = false;
       var rowHokenAlert = false;
+      var rowLeaseAlert = false;
       pairs.forEach(function (p) {
         var dateCell = cells[p.dateIdx];
         if (!dateCell) return;
         var d = diffDays(readOriginalDate(dateCell));
         if (d == null) return;
         if (/車検/.test(p.label) && d <= SHAKEN_THRESHOLD) rowShakenAlert = true;
-        if (/保険|満期/.test(p.label) && d <= HOKEN_THRESHOLD) rowHokenAlert = true;
+        if (/リース/.test(p.label) && d <= LEASE_THRESHOLD) rowLeaseAlert = true;
+        else if (/保険|満期/.test(p.label) && d <= HOKEN_THRESHOLD) rowHokenAlert = true;
       });
 
       // 集計はアラートフィルタに関係なく加算（カードは絶対値を表示）
       stats.total++;
       if (rowShakenAlert) stats.shaken++;
       if (rowHokenAlert) stats.hoken++;
+      if (rowLeaseAlert) stats.lease++;
 
       // アラートフィルタ適用（表示制御のみ）
       if (alertFilter === 'shaken' && !rowShakenAlert) {
@@ -168,6 +182,10 @@
         return;
       }
       if (alertFilter === 'hoken' && !rowHokenAlert) {
+        row.style.display = 'none';
+        return;
+      }
+      if (alertFilter === 'lease' && !rowLeaseAlert) {
         row.style.display = 'none';
         return;
       }
@@ -184,11 +202,17 @@
     var existing = document.getElementById('yk-summary-wrap');
     if (existing) existing.remove();
 
-    var checked = isExcludeEmpty() ? 'checked' : '';
+    var heavyMode = getHeavyMode();
     var activeFilter = getAlertFilter();
     var shakenActive = activeFilter === 'shaken' ? ' yk-card-active' : '';
     var hokenActive = activeFilter === 'hoken' ? ' yk-card-active' : '';
+    var leaseActive = activeFilter === 'lease' ? ' yk-card-active' : '';
     var totalActive = activeFilter === '' ? ' yk-card-active' : '';
+    var alertLabelMap = {
+      shaken: '車検アラートのみ表示中',
+      hoken: '保険アラートのみ表示中',
+      lease: 'リースアラートのみ表示中'
+    };
     var wrap = document.createElement('div');
     wrap.id = 'yk-summary-wrap';
     wrap.setAttribute(PATCHED_ATTR, '1');
@@ -215,13 +239,21 @@
             '<div class="yk-card-value">' + stats.hoken + ' <span class="yk-card-unit">件</span></div>' +
           '</div>' +
         '</div>' +
+        '<div class="yk-card yk-card-lease yk-card-clickable' + leaseActive + '" data-yk-filter="lease">' +
+          '<div class="yk-card-icon">📋</div>' +
+          '<div class="yk-card-body">' +
+            '<div class="yk-card-label">リースアラート（90日以内）</div>' +
+            '<div class="yk-card-value">' + stats.lease + ' <span class="yk-card-unit">件</span></div>' +
+          '</div>' +
+        '</div>' +
       '</div>' +
       '<div id="yk-filter-bar">' +
-        '<label class="yk-filter-toggle">' +
-          '<input type="checkbox" id="yk-exclude-empty" ' + checked + '> ' +
-          '<span>重機（登録番号なし）を除外する</span>' +
-        '</label>' +
-        (activeFilter ? '<span class="yk-filter-status">🔍 ' + (activeFilter === 'shaken' ? '車検アラートのみ表示中' : '保険アラートのみ表示中') + '（カードをもう一度クリックで解除）</span>' : '') +
+        '<div class="yk-heavy-radio">' +
+          '<label><input type="radio" name="yk-heavy-mode" value="exclude" ' + (heavyMode === 'exclude' ? 'checked' : '') + '> 重機を除外</label>' +
+          '<label><input type="radio" name="yk-heavy-mode" value="include" ' + (heavyMode === 'include' ? 'checked' : '') + '> 重機を含む</label>' +
+          '<label><input type="radio" name="yk-heavy-mode" value="only" ' + (heavyMode === 'only' ? 'checked' : '') + '> 重機のみ</label>' +
+        '</div>' +
+        (activeFilter ? '<span class="yk-filter-status">🔍 ' + (alertLabelMap[activeFilter] || '') + '（カードをもう一度クリックで解除）</span>' : '') +
         '<button type="button" class="yk-action-btn yk-action-csv" id="yk-btn-csv">📥 CSVダウンロード</button>' +
         '<button type="button" class="yk-action-btn yk-action-print" id="yk-btn-print">🖨️ 印刷</button>' +
       '</div>';
@@ -231,16 +263,17 @@
       table.parentElement.insertBefore(wrap, table);
     }
 
-    // チェックボックスのイベント
-    var cb = document.getElementById('yk-exclude-empty');
-    if (cb) {
-      cb.addEventListener('change', function () {
-        setExcludeEmpty(cb.checked);
-        // 再実行
-        var newStats = patchListView();
-        renderSummaryCards(newStats);
+    // 重機モードラジオのイベント
+    var radios = wrap.querySelectorAll('input[name="yk-heavy-mode"]');
+    radios.forEach(function (r) {
+      r.addEventListener('change', function () {
+        if (r.checked) {
+          setHeavyMode(r.value);
+          var newStats = patchListView();
+          renderSummaryCards(newStats);
+        }
       });
-    }
+    });
 
     // 印刷ボタン
     var btnPrint = document.getElementById('yk-btn-print');

@@ -91,13 +91,19 @@ footer {
 /* ========== 集計カード ========== */
 #yk-summary-cards {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
   margin: 20px 0 24px;
   font-family: -apple-system, "Segoe UI", "Hiragino Sans", Meiryo, sans-serif;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
+  #yk-summary-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
   #yk-summary-cards {
     grid-template-columns: 1fr;
   }
@@ -123,6 +129,7 @@ footer {
 .yk-card-total { border-left-color: #1976d2; }
 .yk-card-shaken { border-left-color: #d32f2f; }
 .yk-card-hoken { border-left-color: #f57c00; }
+.yk-card-lease { border-left-color: #5e35b1; }
 
 .yk-card-icon {
   font-size: 40px;
@@ -153,6 +160,7 @@ footer {
 .yk-card-total .yk-card-value { color: #1976d2; }
 .yk-card-shaken .yk-card-value { color: #d32f2f; }
 .yk-card-hoken .yk-card-value { color: #f57c00; }
+.yk-card-lease .yk-card-value { color: #5e35b1; }
 
 .yk-card-unit {
   font-size: 16px;
@@ -237,6 +245,42 @@ footer {
 .yk-card-hoken.yk-card-active {
   outline-color: #f57c00;
   box-shadow: 0 4px 20px rgba(245,124,0,0.3);
+}
+
+.yk-card-lease.yk-card-active {
+  outline-color: #5e35b1;
+  box-shadow: 0 4px 20px rgba(94,53,177,0.3);
+}
+
+/* 重機モードラジオ */
+.yk-heavy-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: #fff;
+  border: 1px solid #cfd8dc;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #455a64;
+  font-weight: bold;
+  font-family: -apple-system, "Segoe UI", "Hiragino Sans", Meiryo, sans-serif;
+}
+
+.yk-heavy-radio label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.yk-heavy-radio input[type="radio"] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  accent-color: #1976d2;
+  margin: 0;
 }
 
 /* ========== アクションボタン（CSV / 印刷） ========== */
