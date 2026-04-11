@@ -263,18 +263,7 @@
       table.parentElement.insertBefore(wrap, table);
     }
 
-    // 重機モードボタンのイベント
-    var heavyButtons = wrap.querySelectorAll('.yk-heavy-btn');
-    heavyButtons.forEach(function (btn) {
-      btn.addEventListener('click', function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        var mode = btn.getAttribute('data-yk-heavy');
-        setHeavyMode(mode);
-        var newStats = patchListView();
-        renderSummaryCards(newStats);
-      });
-    });
+    // 重機モードボタンは下記の document delegation で処理する
 
     // 印刷ボタン
     var btnPrint = document.getElementById('yk-btn-print');
@@ -352,12 +341,14 @@
 
     if (sections.length < 2) return;
 
-    // タブバー生成
+    // タブバー生成。grid-cols-12 の中に置くと1セル幅になるので grid-column span を全幅に
     var parent = fields[0].parentElement;
     if (!parent) return;
     var tabs = document.createElement('div');
     tabs.id = 'yk-detail-tabs';
     tabs.setAttribute(PATCHED_ATTR, '1');
+    tabs.style.gridColumn = '1 / -1';
+    tabs.style.width = '100%';
     var tabHtml = '<div class="yk-tab-bar">';
     sections.forEach(function (s, i) {
       tabHtml += '<button type="button" class="yk-tab-btn' + (i === 0 ? ' yk-tab-active' : '') + '" data-yk-tab="' + i + '" style="border-bottom-color:' + s.color + '">' + s.title + '</button>';
@@ -374,19 +365,7 @@
       });
     });
 
-    // タブクリック
-    tabs.querySelectorAll('.yk-tab-btn').forEach(function (btn) {
-      btn.addEventListener('click', function (e) {
-        e.preventDefault();
-        var idx = btn.getAttribute('data-yk-tab');
-        tabs.querySelectorAll('.yk-tab-btn').forEach(function (b) {
-          b.classList.toggle('yk-tab-active', b === btn);
-        });
-        document.querySelectorAll('.kv-detail-field[data-yk-section]').forEach(function (f) {
-          f.style.display = f.getAttribute('data-yk-section') === idx ? '' : 'none';
-        });
-      });
-    });
+    // タブクリックは グローバル delegation で処理
   }
 
   // 詳細ビュー: kv-detail-field-label が「残日数」のフィールドを探し、
@@ -598,11 +577,47 @@
     });
   }
 
+  // ============ グローバル委譲ハンドラ（一度だけ登録、wrap再生成で失われない） ============
+  var globalDelegationInstalled = false;
+  function installGlobalDelegation() {
+    if (globalDelegationInstalled) return;
+    globalDelegationInstalled = true;
+    document.addEventListener('click', function (e) {
+      // 重機ボタン
+      var heavy = e.target.closest && e.target.closest('.yk-heavy-btn');
+      if (heavy) {
+        e.preventDefault();
+        var mode = heavy.getAttribute('data-yk-heavy');
+        setHeavyMode(mode);
+        var newStats = patchListView();
+        renderSummaryCards(newStats);
+        return;
+      }
+      // タブボタン
+      var tab = e.target.closest && e.target.closest('.yk-tab-btn');
+      if (tab) {
+        e.preventDefault();
+        var idx = tab.getAttribute('data-yk-tab');
+        var tabsBar = tab.closest('#yk-detail-tabs');
+        if (tabsBar) {
+          tabsBar.querySelectorAll('.yk-tab-btn').forEach(function (b) {
+            b.classList.toggle('yk-tab-active', b === tab);
+          });
+        }
+        document.querySelectorAll('.kv-detail-field[data-yk-section]').forEach(function (f) {
+          f.style.display = f.getAttribute('data-yk-section') === idx ? '' : 'none';
+        });
+        return;
+      }
+    }, true); // capture phase で先に拾う
+  }
+
   var running = false;
   function run() {
     if (running) return;
     running = true;
     try {
+      installGlobalDelegation();
       var stats = patchListView();
       renderSummaryCards(stats);
       patchDetailTabs();

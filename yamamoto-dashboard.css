@@ -66,25 +66,30 @@ a[href*="detail"]:hover {
   background: #1565c0 !important;
 }
 
-/* タイトル装飾 (中央揃え + sticky) */
-.kv-app-title, [class*="app-title"] {
+/* タイトル装飾 (中央揃え + sticky) — h1/h2 やtitle系すべてに適用 */
+.kv-app-title,
+[class*="app-title"],
+[class*="page-title"],
+h1[class*="title"],
+h2[class*="title"],
+.kv-app-header h1,
+.kv-app-header h2,
+.kv-page > h1:first-child,
+main > h1:first-child,
+main h1:first-of-type,
+[class*="ViewTitle"],
+[class*="view-title"] {
   background: linear-gradient(90deg, #1976d2, #42a5f5) !important;
   color: #fff !important;
   padding: 16px 24px !important;
   border-radius: 8px !important;
-  margin-bottom: 16px !important;
+  margin: 0 0 16px 0 !important;
   font-size: 22px !important;
   box-shadow: 0 2px 6px rgba(25,118,210,0.2) !important;
   text-align: center !important;
-}
-
-/* kViewer ページヘッダー全体を sticky 化 */
-header, [class*="kv-header"], [class*="page-header"] {
   position: sticky !important;
   top: 0 !important;
   z-index: 100 !important;
-  background: #fff !important;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
 }
 
 /* 詳細画面の見出し */
@@ -482,10 +487,15 @@ footer {
 #yk-detail-tabs {
   margin: 16px 0 8px;
   position: sticky;
-  top: 0;
+  top: 60px;
   z-index: 50;
   background: #fff;
   font-family: -apple-system, "Segoe UI", "Hiragino Sans", Meiryo, sans-serif;
+  /* grid/flex 親いずれでも全幅にする */
+  grid-column: 1 / -1 !important;
+  flex-basis: 100% !important;
+  width: 100% !important;
+  display: block !important;
 }
 
 .yk-tab-bar {
