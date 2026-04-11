@@ -4,6 +4,16 @@
   'use strict';
 
   var PATCHED_ATTR = 'data-yk-patched';
+  var ORIG_DATE_ATTR = 'data-yk-original-date';
+  var FORMATTED_ATTR = 'data-yk-formatted';
+
+  // 元の日付テキストを取得（data属性優先、なければtextContentから）
+  function readOriginalDate(el) {
+    if (!el) return '';
+    var orig = el.getAttribute && el.getAttribute(ORIG_DATE_ATTR);
+    if (orig) return orig;
+    return (el.textContent || '').trim();
+  }
 
   function diffDays(dateStr) {
     var m = String(dateStr).match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
@@ -99,7 +109,7 @@
         var target = cells[p.daysIdx];
         var dateCell = cells[p.dateIdx];
         if (!target || !dateCell) return;
-        var dateText = dateCell.textContent.trim();
+        var dateText = readOriginalDate(dateCell);
         var d = diffDays(dateText);
         target.setAttribute(PATCHED_ATTR, '1');
         target.textContent = labelFor(d);
@@ -128,7 +138,7 @@
       pairs.forEach(function (p) {
         var dateCell = cells[p.dateIdx];
         if (!dateCell) return;
-        var d = diffDays(dateCell.textContent.trim());
+        var d = diffDays(readOriginalDate(dateCell));
         if (d == null) return;
         if (/車検/.test(p.label) && d <= SHAKEN_THRESHOLD) stats.shaken++;
         if (/保険|満期/.test(p.label) && d <= HOKEN_THRESHOLD) stats.hoken++;
@@ -221,7 +231,7 @@
         }
         var pv = prev.querySelector ? prev.querySelector('.kv-detail-field-value') : null;
         if (pv) {
-          var t = (pv.textContent || '').trim();
+          var t = readOriginalDate(pv);
           if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(t)) { dateText = t; break; }
         }
         prev = prev.previousElementSibling;
@@ -234,6 +244,78 @@
     });
   }
 
+  // 日付を YYYY年M月D日 形式に整形（list/detail両方）
+  function formatDate(text) {
+    var m = String(text).match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if (!m) return null;
+    return m[1] + '年' + parseInt(m[2], 10) + '月' + parseInt(m[3], 10) + '日';
+  }
+
+  // 整数部にカンマを入れる
+  function addCommas(numStr) {
+    return numStr.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+
+  // 数値を「3桁区切り＋単位（任意）」形式に整形。元が4桁未満ならスキップ
+  function formatNumberValue(text) {
+    // パターン: 数字(の整数) 任意でスペースと単位（km, ¥, 円, %, 日, ヶ月 等）
+    var m = text.match(/^(\d{4,})((?:\s*(?:km|¥|円|%|日|ヶ月|m|kg))?)\s*$/);
+    if (!m) return null;
+    return addCommas(m[1]) + m[2];
+  }
+
+  // 一覧テーブル＋詳細ビューの値セルを走査してフォーマット適用
+  function patchFormatting() {
+    // 詳細ビュー
+    var detailValues = document.querySelectorAll('.kv-detail-field-value');
+    detailValues.forEach(function (el) {
+      if (el.getAttribute(FORMATTED_ATTR)) return;
+      // 残日数等は他のpatcherが書き換えるので、PATCHED_ATTRが付いていたら触らない
+      if (el.getAttribute(PATCHED_ATTR)) return;
+      var raw = (el.textContent || '').trim();
+      if (!raw) return;
+
+      var asDate = formatDate(raw);
+      if (asDate) {
+        el.setAttribute(ORIG_DATE_ATTR, raw);
+        el.setAttribute(FORMATTED_ATTR, '1');
+        el.textContent = asDate;
+        return;
+      }
+
+      var asNum = formatNumberValue(raw);
+      if (asNum) {
+        el.setAttribute(FORMATTED_ATTR, '1');
+        el.textContent = asNum;
+        return;
+      }
+    });
+
+    // 一覧テーブルのセル
+    var tableCells = document.querySelectorAll('table tbody td');
+    tableCells.forEach(function (el) {
+      if (el.getAttribute(FORMATTED_ATTR)) return;
+      if (el.getAttribute(PATCHED_ATTR)) return;
+      var raw = (el.textContent || '').trim();
+      if (!raw) return;
+
+      var asDate = formatDate(raw);
+      if (asDate) {
+        el.setAttribute(ORIG_DATE_ATTR, raw);
+        el.setAttribute(FORMATTED_ATTR, '1');
+        el.textContent = asDate;
+        return;
+      }
+
+      var asNum = formatNumberValue(raw);
+      if (asNum) {
+        el.setAttribute(FORMATTED_ATTR, '1');
+        el.textContent = asNum;
+        return;
+      }
+    });
+  }
+
   var running = false;
   function run() {
     if (running) return;
@@ -242,6 +324,7 @@
       var stats = patchListView();
       renderSummaryCards(stats);
       patchDetailView();
+      patchFormatting();
     } catch (e) {
       console.error('[yamamoto-dashboard.js]', e);
     } finally {
