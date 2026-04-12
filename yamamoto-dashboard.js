@@ -131,13 +131,17 @@
           target.setAttribute(PATCHED_ATTR, '1');
           if (d == null) {
             if (/保険|リース/.test(base)) {
-              target.textContent = '未登録';
-              target.style.color = '#90a4ae';
-              target.style.background = '#eceff1';
-              target.style.fontWeight = 'normal';
-              target.style.fontSize = '12px';
-              target.style.borderRadius = '3px';
-              target.style.padding = '1px 6px';
+              [dateDd, target].forEach(function (c) {
+                if (!c) return;
+                c.setAttribute(PATCHED_ATTR, '1');
+                c.textContent = '未登録';
+                c.style.color = '#90a4ae';
+                c.style.background = '#eceff1';
+                c.style.fontWeight = 'normal';
+                c.style.fontSize = '12px';
+                c.style.borderRadius = '3px';
+                c.style.padding = '1px 6px';
+              });
             } else {
               target.textContent = '—';
               target.style.color = '#b0bec5';
@@ -210,15 +214,19 @@
         var d = diffDays(dateText);
         target.setAttribute(PATCHED_ATTR, '1');
         if (d == null) {
-          // 車検以外の空列は「未登録」バッジ、車検は「—」のまま
           if (/保険|リース/.test(p.label)) {
-            target.textContent = '未登録';
-            target.style.color = '#90a4ae';
-            target.style.background = '#eceff1';
-            target.style.fontWeight = 'normal';
-            target.style.fontSize = '12px';
-            target.style.borderRadius = '3px';
-            target.style.padding = '1px 6px';
+            // 日付列・まで列 両方「未登録」バッジ
+            [dateCell, target].forEach(function (c) {
+              if (!c) return;
+              c.setAttribute(PATCHED_ATTR, '1');
+              c.textContent = '未登録';
+              c.style.color = '#90a4ae';
+              c.style.background = '#eceff1';
+              c.style.fontWeight = 'normal';
+              c.style.fontSize = '12px';
+              c.style.borderRadius = '3px';
+              c.style.padding = '1px 6px';
+            });
           } else {
             target.textContent = '—';
             target.style.color = '#b0bec5';
