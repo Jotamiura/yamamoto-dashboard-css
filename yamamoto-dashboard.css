@@ -569,7 +569,7 @@ footer {
 /* 旧証券ありバッジ (自賠責・任意保険の見出しに注入) */
 .yk-old-cert-badge {
   display: inline-block;
-  margin-left: 12px;
+  margin-left: 8px;
   padding: 3px 10px;
   background: linear-gradient(90deg, #f57c00, #ef6c00);
   color: #fff !important;
@@ -577,6 +577,21 @@ footer {
   font-weight: bold;
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(245,124,0,0.3);
+  vertical-align: middle;
+  letter-spacing: 0.02em;
+}
+
+/* データ無しバッジ */
+.yk-nodata-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 3px 10px;
+  background: linear-gradient(90deg, #90a4ae, #78909c);
+  color: #fff !important;
+  font-size: 12px;
+  font-weight: bold;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
   vertical-align: middle;
   letter-spacing: 0.02em;
 }

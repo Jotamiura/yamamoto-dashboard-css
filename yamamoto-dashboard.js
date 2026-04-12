@@ -391,6 +391,69 @@
     });
   }
 
+  // 詳細ビュー: セクション内の全フィールドが空なら「データ無し」バッジをタブ/セクション見出しに注入
+  function patchNoDataBadge() {
+    var fields = Array.from(document.querySelectorAll('.kv-detail-field'));
+    if (!fields.length) return;
+
+    // セクション分割
+    var currentSection = null;
+    var currentSectionFields = [];
+    var sections = [];
+    fields.forEach(function (f) {
+      var h3 = f.querySelector('h3');
+      if (h3) {
+        if (currentSection) sections.push({ header: currentSection, fields: currentSectionFields });
+        currentSection = f;
+        currentSectionFields = [];
+      } else if (currentSection) {
+        currentSectionFields.push(f);
+      }
+    });
+    if (currentSection) sections.push({ header: currentSection, fields: currentSectionFields });
+
+    sections.forEach(function (sec) {
+      var title = ((sec.header.querySelector('h3') || {}).textContent || '').trim();
+      if (!title) return;
+
+      // セクション内のフィールド値をチェック
+      var hasAnyData = false;
+      var valueCount = 0;
+      sec.fields.forEach(function (f) {
+        var val = f.querySelector('.kv-detail-field-value');
+        if (!val) return;
+        valueCount++;
+        var text = (val.textContent || '').trim();
+        // 空, em-dash, ハイフンのみ, は「データ無し」扱い
+        if (text && text !== '—' && text !== '-' && text !== '0' && !/^0日/.test(text)) {
+          hasAnyData = true;
+        }
+      });
+
+      // 価値あるフィールドが無いセクション（見出しだけ等）はスキップ
+      if (valueCount === 0) return;
+      if (hasAnyData) return;  // データがあるならバッジ不要
+
+      // タブボタンに「データ無し」バッジ注入（バッジは旧証券ありの隣に並ぶ）
+      var tabBtn = Array.from(document.querySelectorAll('.yk-tab-btn')).find(function (b) {
+        var text = (b.textContent || '').replace(/旧証券あり|データ無し/g, '').trim();
+        return text === title;
+      });
+      var target = tabBtn || sec.header;
+      if (!target) return;
+
+      // 既存の「データ無し」バッジ削除
+      var existing = target.querySelector('.yk-nodata-badge');
+      if (existing) existing.remove();
+
+      var badge = document.createElement('span');
+      badge.className = 'yk-nodata-badge';
+      badge.textContent = 'データ無し';
+      badge.setAttribute(PATCHED_ATTR, '1');
+      target.appendChild(badge);
+    });
+  }
+
   // 詳細ビュー: 自賠責/任意保険 セクションで、始期が未来日付なら「旧証券あり」バッジを注入
   // 業務ロジック: 新証券を先行入力する運用 → 始期 > today = 旧証券がまだ有効中
   function patchOldCertBadge() {
@@ -844,6 +907,7 @@
       patchDetailView();
       patchOldCertBadge();
       patchFormatting();
+      patchNoDataBadge();
     } catch (e) {
       console.error('[yamamoto-dashboard.js]', e);
     } finally {
