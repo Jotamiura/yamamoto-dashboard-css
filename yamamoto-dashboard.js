@@ -943,8 +943,8 @@
       patchDetailTabs();
       patchDetailView();
       patchOldCertBadge();
+      patchNoDataBadge();   // must run BEFORE patchFormatting: formatting destroys <hr> elements
       patchFormatting();
-      patchNoDataBadge();
     } catch (e) {
       console.error('[yamamoto-dashboard.js]', e);
     } finally {
