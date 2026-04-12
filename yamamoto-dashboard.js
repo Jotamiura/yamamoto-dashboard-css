@@ -396,7 +396,7 @@
     var fields = Array.from(document.querySelectorAll('.kv-detail-field'));
     if (!fields.length) return;
 
-    // セクション分割
+    // セクション分割: h3 で開始、次の h3 または HR で終了
     var currentSection = null;
     var currentSectionFields = [];
     var sections = [];
@@ -405,6 +405,11 @@
       if (h3) {
         if (currentSection) sections.push({ header: currentSection, fields: currentSectionFields });
         currentSection = f;
+        currentSectionFields = [];
+      } else if (f.querySelector('hr')) {
+        // HR = セクション境界。現セクションを確定し、以降は無所属にする
+        if (currentSection) sections.push({ header: currentSection, fields: currentSectionFields });
+        currentSection = null;
         currentSectionFields = [];
       } else if (currentSection) {
         currentSectionFields.push(f);
@@ -420,8 +425,10 @@
       var hasAnyData = false;
       var valueCount = 0;
       sec.fields.forEach(function (f) {
+        // LABEL型フィールド（サブヘッダー ■ リース料 等）はスキップ: label要素が無い
+        var lbl = f.querySelector('.kv-detail-field-label');
         var val = f.querySelector('.kv-detail-field-value');
-        if (!val) return;
+        if (!val || !lbl) return;
         valueCount++;
         var text = (val.textContent || '').trim();
         // 空, em-dash, ハイフンのみ, は「データ無し」扱い
