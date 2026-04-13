@@ -10,8 +10,8 @@ h1, .title, [class*="title"] {
   color: #1976d2 !important;
 }
 
-/* テーブル全体（overflow:hidden を外して thead の sticky を有効化） */
-table {
+/* テーブル全体（overflow:hidden を外して thead の sticky を有効化）— データテーブルのみ */
+table.kv-list {
   border-collapse: separate !important;
   border-spacing: 0 !important;
   background: #fff !important;
@@ -38,7 +38,7 @@ table {
 }
 
 /* テーブルヘッダー */
-thead th {
+.kv-list thead th {
   background: linear-gradient(180deg, #1976d2, #1565c0) !important;
   color: #fff !important;
   font-weight: bold !important;
@@ -51,18 +51,18 @@ thead th {
 }
 
 /* 行ホバー */
-tbody tr:hover {
+.kv-list tbody tr:hover {
   background: #e3f2fd !important;
   transition: background 0.15s;
 }
 
 /* 行の縞模様 */
-tbody tr:nth-child(even) {
+.kv-list tbody tr:nth-child(even) {
   background: #fafbfc;
 }
 
 /* セル余白 */
-tbody td {
+.kv-list tbody td {
   padding: 10px !important;
   border-bottom: 1px solid #eceff1 !important;
 }
@@ -97,8 +97,16 @@ thead th {
 }
 
 /* th 内の flex コンテナも中央寄せ (kViewerは <div class="flex items-center"> でラベルを包む) */
-thead th > div {
+.kv-list thead th > div {
   justify-content: center !important;
+}
+
+/* ========== ポップオーバー（検索パネル等）のスタイルリセット ========== */
+[id^="headlessui-popover-panel"] table,
+[id^="headlessui-popover-panel"] thead th,
+[id^="headlessui-popover-panel"] tbody td,
+[id^="headlessui-popover-panel"] tbody tr {
+  all: revert !important;
 }
 
 /* 詳細画面の見出し */
