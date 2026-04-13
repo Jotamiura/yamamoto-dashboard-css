@@ -604,3 +604,36 @@ footer {
 .kv-detail-field[data-yk-section] {
   /* セクション開始フィールドの上側余白を詰める */
 }
+
+/* 確認ボタン（一覧行内） */
+.yk-confirm-btn {
+  display: inline-block;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 3px;
+  border: 1px solid;
+  cursor: pointer;
+  margin-left: 6px;
+  white-space: nowrap;
+  text-decoration: none !important;
+  vertical-align: middle;
+  line-height: 1.6;
+}
+.yk-confirm-shaken {
+  color: #d32f2f;
+  border-color: #d32f2f;
+  background: #fff;
+}
+.yk-confirm-shaken:hover {
+  background: #d32f2f;
+  color: #fff;
+}
+.yk-confirm-insurance {
+  color: #1565c0;
+  border-color: #1565c0;
+  background: #fff;
+}
+.yk-confirm-insurance:hover {
+  background: #1565c0;
+  color: #fff;
+}

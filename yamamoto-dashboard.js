@@ -7,6 +7,11 @@
   var ORIG_DATE_ATTR = 'data-yk-original-date';
   var FORMATTED_ATTR = 'data-yk-formatted';
 
+  // FormBridge 確認フォーム URL（信和商事用）
+  var FB_SHAKEN_URL = 'https://60344017.form.kintoneapp.com/public/00000a99686cfd11947499b2bd7929b47933e9a884faf5f334a98ae61019563c';
+  var FB_INSURANCE_URL = 'https://60344017.form.kintoneapp.com/public/f56ea0f2048f8611e46a509273d8782bf03fd6669243bd742d9bec907277fd3d';
+  var CONFIRM_BTN_ATTR = 'data-yk-confirm';
+
   // 元の日付テキストを取得（data属性優先、なければtextContentから）
   function readOriginalDate(el) {
     if (!el) return '';
@@ -300,6 +305,46 @@
       }
 
       row.style.display = '';
+
+      // --- Pass 3: 確認ボタン挿入 ---
+      if (row.getAttribute(CONFIRM_BTN_ATTR)) return; // 既に挿入済み
+
+      // 詳細リンクから recordCode を取得
+      var detailLink = row.querySelector('a[href*="detail"]');
+      if (!detailLink) return;
+      var hrefMatch = detailLink.getAttribute('href').match(/detail\/([^/?]+)/);
+      if (!hrefMatch) return;
+      var recordCode = hrefMatch[1];
+
+      // 最初のセル（「詳細 >」リンクの隣）にボタンを挿入
+      var firstCell = cells[0];
+      if (!firstCell) return;
+
+      if (rowShakenAlert) {
+        var shakenBtn = document.createElement('a');
+        shakenBtn.href = 'javascript:void(0)';
+        shakenBtn.className = 'yk-confirm-btn yk-confirm-shaken';
+        shakenBtn.textContent = '車検確認';
+        shakenBtn.onclick = function () {
+          var w = window.open(FB_SHAKEN_URL + '?_kViewerRecordCode_=' + recordCode, 'fb_confirm', 'width=500,height=600,scrollbars=yes');
+          var timer = setInterval(function () { try { if (w.closed) { clearInterval(timer); location.reload(); } } catch(e) {} }, 500);
+          return false;
+        };
+        firstCell.appendChild(shakenBtn);
+      }
+      if (rowHokenAlert) {
+        var hokenBtn = document.createElement('a');
+        hokenBtn.href = 'javascript:void(0)';
+        hokenBtn.className = 'yk-confirm-btn yk-confirm-insurance';
+        hokenBtn.textContent = '保険確認';
+        hokenBtn.onclick = function () {
+          var w = window.open(FB_INSURANCE_URL + '?_kViewerRecordCode_=' + recordCode, 'fb_confirm', 'width=500,height=600,scrollbars=yes');
+          var timer = setInterval(function () { try { if (w.closed) { clearInterval(timer); location.reload(); } } catch(e) {} }, 500);
+          return false;
+        };
+        firstCell.appendChild(hokenBtn);
+      }
+      row.setAttribute(CONFIRM_BTN_ATTR, '1');
     });
 
     return stats;
