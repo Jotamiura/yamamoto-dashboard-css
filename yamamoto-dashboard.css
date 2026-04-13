@@ -448,6 +448,26 @@ footer {
   display: none;
 }
 
+/* ========== 検索フォーム修正 ========== */
+/* kViewer検索フォームがサマリーカードの下に隠れないようにする */
+[class*="search"],
+.kv-search,
+form[class*="search"],
+div[class*="search"] {
+  position: relative !important;
+  z-index: 60 !important;
+  pointer-events: auto !important;
+}
+
+/* 検索フォーム内のinput/selectを確実にクリック可能にする */
+[class*="search"] input,
+[class*="search"] select,
+[class*="search"] button {
+  pointer-events: auto !important;
+  z-index: 61 !important;
+  position: relative !important;
+}
+
 /* ========== 詳細画面の見やすさ向上 ========== */
 .kv-detail-field {
   margin-bottom: 10px !important;
