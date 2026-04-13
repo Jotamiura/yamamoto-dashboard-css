@@ -1022,6 +1022,21 @@
     check();
   }
 
+  /* ========== 検索パネル開閉時にダッシュボードカードを非表示/表示 ========== */
+  function startSearchPanelWatcher() {
+    var searchObserver = new MutationObserver(function () {
+      var popover = document.querySelector('[id^="headlessui-popover-panel"]');
+      var wrap = document.getElementById('yk-summary-wrap');
+      if (!wrap) return;
+      if (popover) {
+        wrap.style.display = 'none';
+      } else {
+        wrap.style.display = '';
+      }
+    });
+    searchObserver.observe(document.body, { childList: true, subtree: true });
+  }
+
   var observerStarted = false;
   function startObserver() {
     if (observerStarted) return;
@@ -1038,6 +1053,7 @@
       debounce = setTimeout(run, 400);
     });
     observer.observe(document.body, { childList: true, subtree: true });
+    startSearchPanelWatcher();
   }
 
   function bootstrap() {
